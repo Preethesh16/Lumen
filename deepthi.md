@@ -78,3 +78,28 @@ about a humanitarian crisis are the one thing this project cannot ship.
 `packages/shared-types` myself to unblock. Get his sign-off on it before
 building the dashboard against those shapes, or we will diverge exactly the
 way section 9 of the plan warns about.
+
+---
+
+### 2026-07-20 — Session 4 — delivery routes, mock-data rewrite
+
+**Prompt:** pull main, then continue my part of the work.
+
+- Agent: code-logic, tester
+- Files touched: `apps/web/src/app/api/deliver/**`,
+  `apps/web/src/lib/delivery/auth.ts`, `apps/web/src/lib/api/mock-data.ts`,
+  `apps/web/src/lib/__tests__/format.test.ts`,
+  `apps/web/src/lib/delivery/__tests__/auth.test.ts`, `README.md`,
+  `.env.example`
+- Result: 48 tests passing, build clean, auth boundary verified live.
+
+**The thing worth remembering:** the placeholder scores were wrong and nobody
+would have noticed. `mock-data.ts` reimplemented the scoring formula by hand,
+so it drifted the moment the real one changed — and it had never actually
+matched. Anyone reviewing the dashboard without the API up was looking at a
+ranking the system would never produce.
+
+The fix was not to correct the numbers but to delete the duplicate: the mock
+now feeds raw observations through the real `scoreCohort`. Do not reintroduce
+a hand-copied formula anywhere in `apps/web`. If a value can be derived from
+`@lumen/scoring`, derive it.

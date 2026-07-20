@@ -22,3 +22,6 @@ infra/.n8n/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# TypeScript incremental build cache
+*.tsbuildinfo

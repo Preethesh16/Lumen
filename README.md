@@ -95,6 +95,7 @@ gitignored, and CI fails the build if it is ever tracked.
 | `ANTHROPIC_MODEL` | brief generation | Optional; defaults to `claude-sonnet-5` |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | delivery | Deepthi. Bot must be a channel admin |
 | `RESEND_API_KEY` / `DIGEST_FROM_EMAIL` | email digest | From-address must be on a Resend-verified domain |
+| `DIGEST_RECIPIENTS` | email digest | Comma-separated. Empty ⇒ digest route 503s |
 
 None of these are needed to start the dashboard. Each unlocks a capability,
 and the UI explains what is missing when one is absent rather than failing.
@@ -157,6 +158,18 @@ The dashboard reads `GET /crises` and `GET /crises/:id`. For a selected
 crisis, the content-generation agent turns that stored data into three
 audience-tailored briefs — a journalist pitch, a donor one-pager, and an NGO
 fundraising angle — which are delivered to Telegram and a weekly digest email.
+
+### Delivery endpoints
+
+n8n triggers delivery rather than the app running its own cron, so the pipeline
+has a single scheduler and delivery cannot fire on stale scores. Both routes
+authenticate with the same `x-lumen-webhook-secret` header the ingestion
+webhook uses, and both fail closed if that secret is unset.
+
+| Route | Trigger | Behaviour |
+|---|---|---|
+| `POST /api/deliver/briefs` | After a scoring run | Generates briefs for the top-N *positively*-gapped crises and pushes them to Telegram. Body: `{ "limit"?: number, "audience"?: "journalist" \| "donor" \| "ngo" }`. Returns `207` on partial success |
+| `POST /api/deliver/digest` | Weekly | Emails the top 10 to `DIGEST_RECIPIENTS`. Returns `502` rather than sending if the API is unreachable — a digest saying "nothing this week" when the API was merely down reads as a finding rather than a failure |
 
 ### Briefs are grounded or they are withheld
 

@@ -53,7 +53,12 @@ trend, and briefs with copy-to-clipboard. Deployed and reachable at a URL.
 ## Phase 4 — Hardening (Week 4)
 
 - [ ] Retry/backoff on every upstream call; partial data degrades gracefully
-- [ ] Empty states and API-failure states in the dashboard
+      *(done on Deepthi's surfaces: Claude API, Telegram, Resend, and the
+      dashboard's API client. Preethesh's n8n HTTP nodes still unverified
+      inside a running n8n.)*
+- [x] Empty states and API-failure states in the dashboard
+      *(empty cohort, unreachable API, missing API key, absent OCHA appeal,
+      single-point history — all render a specific explanation)*
 - [ ] Full test suite green; `verifier` PASS
 - [ ] Final deploy + demo recording + README walkthrough
 

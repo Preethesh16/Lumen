@@ -139,8 +139,6 @@ scoring semantics.
 
 ---
 
----
-
 ## Session 1 — 2026-07-20 — Deepthi
 
 **Goal:** Stand up the delivery/experience side of the project — shared
@@ -318,3 +316,80 @@ agree first, build second.
   `headline`/`body`/`statsUsed`. I need the structure for the grounding
   citations UI; his schema needs to store it. This is a real open question,
   not a detail.
+
+---
+
+## Session 4 — 2026-07-20 — Deepthi
+
+**Goal:** Close the gaps left after the contract reconciliation — make delivery
+actually reachable, and stop placeholder data drifting from the real formula.
+
+**Agents used:** code-logic (routes, mock rewrite), tester (auth + format suites)
+
+**Changes made:**
+
+- **Delivery is no longer dead code.** `sendBrief` and `sendDigest` existed but
+  nothing called them, so Phase 3's "a scheduled run produces a brief that
+  lands in Telegram" was not actually achievable. Added
+  `POST /api/deliver/briefs` and `POST /api/deliver/digest` as n8n-triggered
+  route handlers.
+- **Mock data now runs the real scoring function.** `mock-data.ts` invents only
+  raw upstream observations and passes them through `scoreCohort` /
+  `rankByAttentionGap` from `@lumen/scoring`.
+- Tests for `format.ts` (17) and the delivery auth guard (5), neither of which
+  had any coverage.
+- Documented `DIGEST_RECIPIENTS` and both routes in README and `.env.example`.
+
+**Bugs found:**
+
+1. *Placeholder scores had silently drifted from the real formula.* The mock
+   hardcoded `raw * (1 + fundingGapPct * 0.85)` — an imitation that never
+   matched v1.0.0 and was further wrong after Preethesh's v1.1.0 added an
+   additive funding term. Anyone reviewing the dashboard without the API up was
+   looking at a ranking the system would never produce. Root cause: duplicating
+   a formula instead of calling it. Fixed by importing the real function, which
+   makes this class of drift impossible rather than merely fixed.
+2. *A comment I wrote overclaimed.* The Chad row was annotated as reproducing
+   the v1.1.0 zeroing bug. It does not — Chad is not the cohort minimum on
+   need, so its raw gap is non-zero and it scores 0.614. Comment corrected to
+   say what the data actually does; reproducing that bug belongs in
+   `packages/scoring`'s tests, not in display fixtures.
+
+**Decisions made:**
+
+- *Delivery is triggered by n8n, not by a cron inside the app.* One scheduler
+  for the whole pipeline, and delivery cannot fire on stale scores. It also
+  keeps the app stateless, which matters for Vercel.
+- *Delivery routes reuse `N8N_WEBHOOK_SECRET`.* Same header and env var as
+  Preethesh's ingestion webhook — one credential for n8n to hold, not two.
+- *The routes fail closed.* An unset secret disables them (503) rather than
+  leaving them open. They spend Claude API credits and publish to a public
+  channel, so "unconfigured" must never mean "unauthenticated".
+- *Telegram only sends crises with a positive attention gap; the digest sends
+  regardless.* Pushing a well-covered crisis to the channel would undercut the
+  one thing subscribers rely on it for. The digest is a standing weekly report,
+  where a quiet week is itself information.
+- *The digest returns 502 rather than sending when the API is unreachable.* An
+  email saying "no crises this week" when the API was merely down reads as a
+  finding rather than a failure, and someone would act on it.
+
+**Tests:** 48 passing, 0 failing (16 grounding, 17 format, 10 delivery, 5 auth).
+Full workspace typechecks, lint clean, `next build` succeeds with both routes
+registered. Auth boundary verified live: 401 unauthenticated, 401 on a wrong
+secret, 503 with a specific reason when config is absent, 405 on GET.
+
+**Not done — flagged honestly:**
+
+- Still nothing has run against the live Claude API, a real Telegram bot, or a
+  real Resend account. The routes are reachable and authenticated; whether a
+  message actually arrives is unproven.
+- Brief persistence is still unresolved — `Brief.content` is one string and
+  `statsUsed` has nowhere to go. Needs Preethesh.
+- Preethesh's v1.1.0 scoring fix (`05fe591`) is on `preethesh/dev` and not in
+  `main`. Deliberately not merged here — merging his work to `main` is his
+  call, not mine. `main` therefore still scores on v1.0.0.
+
+**Next up:**
+- Agree brief persistence with Preethesh, then store generated briefs instead
+  of regenerating on every page view.
+- First real end-to-end send once a bot token exists.
