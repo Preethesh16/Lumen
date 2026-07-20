@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, typecheck, test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: lumen
+          POSTGRES_PASSWORD: ci_password
+          POSTGRES_DB: lumen_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U lumen -d lumen_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # CI-only values. Real secrets live in repository secrets, never here.
+      DATABASE_URL: postgresql://lumen:ci_password@localhost:5432/lumen_test
+      N8N_WEBHOOK_SECRET: ci_webhook_secret_at_least_16
+      NODE_ENV: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace packages
+        # shared-types and scoring must be built before the API can typecheck
+        # against them.
+        run: pnpm -r --filter "./packages/**" build
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      - name: Test
+        run: pnpm -r test
+
+      - name: Verify migrations apply to a clean database
+        # Catches schema drift: a schema change with no generated migration
+        # passes typecheck but breaks every real deploy.
+        run: pnpm --filter @lumen/api db:migrate
+
+      - name: Verify n8n workflow JSON is parseable
+        # These are committed exports; a malformed one fails at import time in
+        # the n8n UI, which is a slow and confusing place to discover it.
+        run: |
+          for f in n8n/workflows/*.json; do
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" \
+              || { echo "Invalid JSON: $f"; exit 1; }
+            echo "ok: $f"
+          done
+
+      - name: Check for committed secrets
+        run: |
+          if git ls-files | grep -E '^\.env$'; then
+            echo "ERROR: .env is tracked by git"
+            exit 1
+          fi
+          echo "ok: no .env tracked"

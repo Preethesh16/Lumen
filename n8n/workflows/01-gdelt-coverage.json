@@ -1,0 +1,120 @@
+{
+  "name": "Lumen — GDELT media coverage",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 2 * * *" }]
+        }
+      },
+      "id": "gdelt-schedule",
+      "name": "Daily 02:00 UTC",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-200, 300],
+      "notes": "First of the four daily workflows. The last one to run (FTS) is the one that sets triggerScoring."
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.LUMEN_API_BASE_URL }}/crises",
+        "options": { "timeout": 20000 }
+      },
+      "id": "gdelt-fetch-cohort",
+      "name": "Get active crises",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [20, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "notes": "Cohort comes from the API rather than being hardcoded here, so the country list cannot drift between the workflow and the database."
+    },
+    {
+      "parameters": {
+        "jsCode": "// On a cold start /crises is empty because nothing has been scored yet, so\n// fall back to a bootstrap list matching the DB seed. Used ONLY when the API\n// returns an empty cohort.\nconst BOOTSTRAP = ['AFG','BFA','CAF','CMR','COD','COL','ETH','HTI','IRQ','LBN','LBY','MLI','MMR','MOZ','NER','NGA','PSE','SDN','SOM','SSD','SYR','TCD','UKR','VEN','YEM','ZWE'];\n\nconst response = $input.first().json;\nconst fromApi = (response.data ?? []).map((c) => c.iso3).filter(Boolean);\nconst iso3s = fromApi.length > 0 ? fromApi : BOOTSTRAP;\n\n// GDELT has no bulk endpoint — one query per country. One item per country\n// lets the HTTP node fan out and n8n handle pacing.\nreturn iso3s.map((iso3) => ({ json: { iso3 } }));"
+      },
+      "id": "gdelt-build-queries",
+      "name": "Build per-country queries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.gdeltproject.org/api/v2/doc/doc",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "query", "value": "={{ 'sourcecountry:' + $json.iso3 }}" },
+            { "name": "mode", "value": "timelinevol" },
+            { "name": "timespan", "value": "1d" },
+            { "name": "format", "value": "json" }
+          ]
+        },
+        "options": {
+          "timeout": 30000,
+          "batching": { "batch": { "batchSize": 1, "batchInterval": 6000 } }
+        }
+      },
+      "id": "gdelt-http",
+      "name": "GDELT DOC 2.0",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 10000,
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "One request every 6s — GDELT's own throttle notice demands one per 5s, verified live on 2026-07-20 (it returns a plain-text warning, not JSON, when exceeded). 26 countries therefore takes ~3min, which is fine on a nightly schedule. onError=continue so one bad country cannot abort the run."
+    },
+    {
+      "parameters": {
+        "jsCode": "// GDELT returns HTML or an empty body when throttled, so nothing is trusted.\nconst observedAt = new Date().toISOString().slice(0, 10);\nconst observations = [];\nconst skipped = [];\n\nfor (const item of $input.all()) {\n  const iso3 = item.json.iso3;\n  if (!iso3) continue;\n\n  // timelinevol shape: { timeline: [ { data: [ { date, value }, ... ] } ] }\n  const series = item.json?.timeline?.[0]?.data;\n  if (!Array.isArray(series) || series.length === 0) {\n    skipped.push(iso3);\n    continue;\n  }\n\n  const value = Number(series[series.length - 1]?.value);\n  if (!Number.isFinite(value) || value < 0) {\n    skipped.push(iso3);\n    continue;\n  }\n\n  observations.push({ iso3, source: 'gdelt', metric: 'coverage_volume_pct', value, observedAt });\n}\n\nif (skipped.length > 0) console.warn('GDELT: no usable series for ' + skipped.join(', '));\n\n// A run that produced nothing must fail loudly rather than POST an empty batch\n// and be recorded as a success.\nif (observations.length === 0) {\n  throw new Error('GDELT returned no usable data for any country — likely throttled.');\n}\n\nreturn [{ json: { source: 'gdelt', observations, triggerScoring: false } }];"
+      },
+      "id": "gdelt-parse",
+      "name": "Parse to observations",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.LUMEN_API_BASE_URL }}/webhook/n8n-score-update",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-lumen-webhook-secret", "value": "={{ $env.N8N_WEBHOOK_SECRET }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "gdelt-post",
+      "name": "POST to Lumen API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "notes": "Secret is read from the environment, never stored in this file — it is committed to git."
+    }
+  ],
+  "connections": {
+    "Daily 02:00 UTC": { "main": [[{ "node": "Get active crises", "type": "main", "index": 0 }]] },
+    "Get active crises": { "main": [[{ "node": "Build per-country queries", "type": "main", "index": 0 }]] },
+    "Build per-country queries": { "main": [[{ "node": "GDELT DOC 2.0", "type": "main", "index": 0 }]] },
+    "GDELT DOC 2.0": { "main": [[{ "node": "Parse to observations", "type": "main", "index": 0 }]] },
+    "Parse to observations": { "main": [[{ "node": "POST to Lumen API", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all"
+  },
+  "tags": ["lumen", "ingestion"]
+}

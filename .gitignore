@@ -1,0 +1,24 @@
+node_modules/
+dist/
+build/
+.next/
+coverage/
+
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Local dev API response cache (avoids burning GDELT/ReliefWeb quota on repeat runs)
+.cache/
+
+# n8n local runtime state
+infra/.n8n/
+
+# Editor / OS
+.DS_Store
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json
