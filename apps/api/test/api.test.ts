@@ -226,9 +226,15 @@ describe('scoring and ranking', () => {
     expect(body.scoredFor).toBe(TODAY);
     expect(body.data[0].iso3).toBe('SDN');
     expect(body.data[0].rank).toBe(1);
-    // Ukraine: high need but saturated coverage — the gap must go negative.
+    // The core property: the under-reported crisis ranks above the saturated
+    // one. Ukraine's absolute score is not asserted — it is 65% funded, so the
+    // v1.1.0 additive bonus can lift it slightly positive.
+    const sdn = body.data.find((c: { iso3: string }) => c.iso3 === 'SDN');
     const ukr = body.data.find((c: { iso3: string }) => c.iso3 === 'UKR');
-    expect(ukr.latestScore.attentionGapScore).toBeLessThan(0);
+    expect(sdn.latestScore.attentionGapScore).toBeGreaterThan(
+      ukr.latestScore.attentionGapScore,
+    );
+    expect(ukr.rank).toBeGreaterThan(sdn.rank);
   });
 
   it('returns null rankDelta on the first run', async () => {

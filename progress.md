@@ -110,29 +110,62 @@ Verified live, not assumed:
 - **UNHCR works as expected.** Shape confirmed: `items[]` keyed on `coa_iso`,
   with some counts returned as strings.
 
-**Open decision — scoring floor (needs a call before the demo):**
-
-Chad scored **0.000** in the live run: 1.9M displaced, 89% unfunded, near-zero
-coverage — tied with countries that have no data whatsoever. Two compounding
-causes, both structural rather than bugs:
-
-1. Min-max normalization forces the cohort *minimum* to exactly 0. Chad was the
-   minimum on both displacement and coverage, so need = 0 and coverage = 0.
-2. Funding amplification is multiplicative, and `0 × 1.445 = 0`, so the 89%
-   underfunding signal was annihilated rather than applied.
-
-This will look broken in a demo. Three options, cheapest first: normalize onto
-`[0.05, 1]` instead of `[0, 1]`; switch to percentile rank; or make the funding
-term partly additive. My recommendation is the first — one-line change, keeps
-the formula interpretable. Not applied unilaterally because it changes approved
-scoring semantics.
-
 **Next up:**
 
-- Decide the scoring-floor question above.
 - Register a ReliefWeb appname.
 - Import the four workflows into the running n8n and execute each once. They
   are JSON-valid and their parse logic is written against verified API shapes,
   but they have **not been run inside n8n** — that is the main untested surface.
 - Agree `packages/shared-types` with Deepthi before she builds against it,
   especially `rankDelta`.
+
+---
+
+## Session 2 — 2026-07-20 — Preethesh
+
+**Goal:** Resolve the scoring-floor problem (Chad scoring 0.000).
+
+**Agents used:** problem-solver (verify the fix empirically), code-logic, tester
+
+**Decision — scoring formula v1.1.0:**
+
+Before touching the formula, tested the candidate fixes against the live Chad
+data in a throwaway script rather than trusting the reasoning. This overturned
+the recommendation from Session 1: **normalizing onto `[0.05, 1]` does not work.**
+A floor shifts need and coverage by the same amount, so their difference — the
+gap — stays exactly 0, and multiplicative funding still cannot lift it. Chad
+stayed at 0.000 for every floor value tried.
+
+The only candidate that actually rescued Chad was an **additive funding term**.
+Formula bumped from v1.0.0 to v1.1.0:
+
+    attention_gap = (need − coverage) × (1 + 0.5·funding_gap) + 0.3·funding_gap
+
+Chose the version bump rather than an in-place edit precisely so the v1.0.0
+scores already in the table stay interpretable — this is what the
+`algorithm_version` column was added for in Session 1.
+
+Trade-off, accepted with the decision: a well-covered but underfunded crisis
+now gets a small positive nudge. In the live cohort this moved Ukraine (65%
+funded) from −0.062 to +0.043. Judged acceptable — underfunding is a real
+signal, and Ukraine still ranks last of the three. `fundingBonus: 0` recovers
+the pure multiplicative model for anyone who disagrees.
+
+**Changes made:**
+
+- `packages/scoring`: added `fundingBonus` (default 0.3), applied the additive
+  term, bumped `ALGORITHM_VERSION` to v1.1.0.
+- Updated the scoring and API tests that had encoded the old contract — two of
+  them asserted the exact behaviour we deliberately changed (funding can now
+  flip a well-covered crisis positive). Rewrote them to assert the new
+  semantics, and added a test proving the floor case is rescued plus one
+  proving `fundingBonus: 0` restores v1.0.0 behaviour.
+
+**Verified end-to-end:** re-scored the live dev database under v1.1.0. Chad:
+**0.000 → 0.267, now rank 2, above Ukraine.** Matches the offline probe exactly
+(SDN 1.674, TCD 0.267, UKR 0.043).
+
+**Tests:** 63 passing (39 scoring, 24 API), 0 failing.
+
+**Next up:** unchanged from Session 1 — ReliefWeb appname, run the workflows
+inside n8n, agree shared-types with Deepthi.

@@ -84,3 +84,15 @@ Scope: data ingestion, n8n orchestration, scoring, backend API, local infra.
   (catches schema drift), n8n JSON validation, and a check that `.env` is never
   tracked.
 - Result: implemented, **not yet run on GitHub Actions**
+
+### 2026-07-20 — Scoring v1.1.0 (additive funding term)
+
+- Agent: problem-solver, then code-logic + tester
+- Files touched: `packages/scoring/src/score.ts`, `packages/scoring/test/*`,
+  `apps/api/test/api.test.ts`, `docs/architecture.md`, `progress.md`
+- Fixed the Chad-scores-0.000 problem. Verified the fix empirically first,
+  which overturned my own Session 1 recommendation — the floor idea does not
+  work; only an additive funding term does. Bumped ALGORITHM_VERSION so old
+  scores survive. Re-scored the live DB: Chad 0.000 → 0.267, rank 2.
+- Result: 63/63 tests passing. See Session 2 in progress.md for the reasoning
+  and the trade-off.

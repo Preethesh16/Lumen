@@ -89,10 +89,14 @@ outside n8n, because business logic buried in a workflow node cannot be tested.
    crises as low-need, and data-poor crises are precisely the population this
    product exists to surface.
 4. **coverage_score** = normalized GDELT coverage volume.
-5. **attention_gap_score** = `(need − coverage) × (1 + 0.5 × funding_gap)`.
-   Underfunding *amplifies* rather than *adds*, because it is evidence about an
-   existing gap rather than an independent reason to care. Adding it would let
-   a well-covered crisis with a shaky appeal outrank an invisible one.
+5. **attention_gap_score** (v1.1.0) =
+   `(need − coverage) × (1 + 0.5 × funding_gap) + 0.3 × funding_gap`.
+   Underfunding acts two ways: it *amplifies* an existing gap, and it adds an
+   *independent* term. The additive term exists to fix a real failure of the
+   original multiplicative-only formula (see below). Its trade-off, accepted
+   deliberately: a well-covered but underfunded crisis gets a small positive
+   nudge it did not previously get. Set `fundingBonus: 0` to recover the pure
+   multiplicative model.
 
 ### Known limitations
 
@@ -102,11 +106,16 @@ These are recorded deliberately, not overlooked.
   drift across runs as the cohort changes. `inputs` stores the raw values so
   scores can be recomputed on a fixed scale later without re-fetching.
 - **Min-max floors the cohort minimum at exactly 0.** The lowest-ranked country
-  on a metric scores 0 on it. Combined with multiplicative funding
-  amplification (`0 × anything = 0`), a country that is genuinely low-signal
-  but severely underfunded can score identically to one with no data at all.
-  Observed live with Chad: 1.9M displaced and 89% unfunded scored 0.000, tied
-  with countries having no observations. See "Open decisions" in `progress.md`.
+  on a metric scores 0 on it. Under the original multiplicative-only formula
+  (v1.0.0), this combined with `0 × anything = 0` so a country that was
+  genuinely low-signal but severely underfunded scored identically to one with
+  no data at all. Observed live with Chad: 1.9M displaced and 89% unfunded
+  scored 0.000. **v1.1.0 fixes this** with the additive funding term — Chad now
+  scores 0.267 and ranks above Ukraine. The underlying floor property remains;
+  the additive term is what stops it zeroing out a real signal. The fix was
+  chosen empirically: a floor-only change (normalizing onto `[0.05, 1]`) was
+  tried first and does *not* work, because it shifts need and coverage by the
+  same amount and leaves their difference at zero.
 - **Multi-country FTS plans attribute the full requirement to each member
   country.** Splitting evenly would understate need in the country actually
   hosting the response, and the API offers no basis for weighting.

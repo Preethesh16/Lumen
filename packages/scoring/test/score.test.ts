@@ -58,8 +58,17 @@ describe('scoreCohort — core behaviour', () => {
     expect(sdn!.attentionGapScore).toBeGreaterThan(ukr!.attentionGapScore);
   });
 
-  it('gives a well-covered crisis a negative gap', () => {
-    const scores = scoreCohort([underReported, wellCovered, quiet]);
+  it('gives a well-covered, well-funded crisis a negative score', () => {
+    // Isolates the coverage effect from the funding bonus: a crisis that is
+    // both saturated in coverage AND well-funded has nothing pushing it up, so
+    // it must land below zero. (A well-covered but underfunded crisis can net
+    // slightly positive under v1.1.0 — that is the deliberate trade-off, tested
+    // separately in the funding suite.)
+    const wellFunded = {
+      ...wellCovered,
+      observations: { ...wellCovered.observations, appeal_funded_pct: 1 },
+    };
+    const scores = scoreCohort([underReported, wellFunded, quiet]);
     const ukr = scores.find((s) => s.iso3 === 'UKR')!;
     expect(ukr.attentionGapScore).toBeLessThan(0);
   });
@@ -98,10 +107,22 @@ describe('scoreCohort — degenerate cohorts', () => {
     const [only] = scoreCohort([underReported]);
     expect(only!.needScore).toBe(NEUTRAL_SCORE);
     expect(only!.coverageScore).toBe(NEUTRAL_SCORE);
-    // Neutral need minus neutral coverage is zero gap — the honest answer when
-    // there is nothing to compare against.
-    expect(only!.attentionGapScore).toBe(0);
+    // The gap component is zero (neutral need minus neutral coverage), so the
+    // only remaining signal is the additive funding bonus. underReported is 85%
+    // unfunded, so score = 0 + 0.3 * 0.85 = 0.255. Never NaN.
+    expect(only!.attentionGapScore).toBeCloseTo(0.255, 10);
     expect(Number.isNaN(only!.attentionGapScore)).toBe(false);
+  });
+
+  it('scores a single-member cohort with no funding data as exactly zero', () => {
+    const noFunding: CohortMember = {
+      crisisId: 'c-only',
+      iso3: 'SOM',
+      observations: { displaced_persons: 100 },
+    };
+    const [only] = scoreCohort([noFunding]);
+    // No gap and no funding signal — the honest answer is zero, not NaN.
+    expect(only!.attentionGapScore).toBe(0);
   });
 
   it('handles a cohort where every member has identical values', () => {
@@ -182,8 +203,8 @@ describe('scoreCohort — missing and malformed data', () => {
   });
 });
 
-describe('scoreCohort — funding amplification', () => {
-  it('amplifies the gap for an underfunded crisis', () => {
+describe('scoreCohort — funding', () => {
+  it('scores an underfunded crisis above an identical fully-funded one', () => {
     const funded = { ...underReported, crisisId: 'c-f', observations: { ...underReported.observations, appeal_funded_pct: 1 } };
     const unfunded = { ...underReported, crisisId: 'c-u', iso3: 'TCD', observations: { ...underReported.observations, appeal_funded_pct: 0 } };
 
@@ -196,13 +217,45 @@ describe('scoreCohort — funding amplification', () => {
     expect(b.attentionGapScore).toBeGreaterThan(a.attentionGapScore);
   });
 
-  it('amplifies rather than adds, so funding cannot flip the sign of a gap', () => {
-    // A well-covered crisis must stay negative no matter how underfunded it is —
-    // underfunding is evidence about a gap, not a gap in itself.
-    const desperate = { ...wellCovered, observations: { ...wellCovered.observations, appeal_funded_pct: 0 } };
-    const scores = scoreCohort([underReported, desperate]);
-    const ukr = scores.find((s) => s.iso3 === 'UKR')!;
-    expect(ukr.attentionGapScore).toBeLessThan(0);
+  it('rescues a zero-gap crisis via the additive funding bonus (the v1.1.0 fix)', () => {
+    // The failure this term fixes: a crisis that is the cohort minimum on every
+    // axis gets need = coverage = 0, so its gap is 0 and multiplicative funding
+    // cannot lift it. The additive bonus must surface a severely underfunded
+    // one above a fully-funded twin that is equally invisible.
+    const floorUnfunded: CohortMember = {
+      crisisId: 'c-floor-u',
+      iso3: 'TCD',
+      observations: { displaced_persons: 100, coverage_volume_pct: 0.001, appeal_funded_pct: 0.05 },
+    };
+    const floorFunded: CohortMember = {
+      crisisId: 'c-floor-f',
+      iso3: 'AAA',
+      observations: { displaced_persons: 100, coverage_volume_pct: 0.001, appeal_funded_pct: 1 },
+    };
+    // A large crisis so the two small ones both sit at the cohort floor.
+    const scores = scoreCohort([floorUnfunded, floorFunded, wellCovered]);
+    const unfunded = scores.find((s) => s.crisisId === 'c-floor-u')!;
+    const funded = scores.find((s) => s.crisisId === 'c-floor-f')!;
+
+    expect(unfunded.needScore).toBe(0);
+    expect(unfunded.coverageScore).toBe(0);
+    // Under v1.0.0 this was exactly 0. The additive bonus now lifts it.
+    expect(unfunded.attentionGapScore).toBeGreaterThan(0);
+    expect(unfunded.attentionGapScore).toBeGreaterThan(funded.attentionGapScore);
+  });
+
+  it('lets fundingBonus=0 recover the pure multiplicative model', () => {
+    // With no additive term, a zero-gap crisis stays at exactly zero.
+    const floor: CohortMember = {
+      crisisId: 'c-floor',
+      iso3: 'TCD',
+      observations: { displaced_persons: 100, coverage_volume_pct: 0.001, appeal_funded_pct: 0 },
+    };
+    const scores = scoreCohort([floor, wellCovered], { fundingBonus: 0 });
+    const f = scores.find((s) => s.crisisId === 'c-floor')!;
+    expect(f.needScore).toBe(0);
+    expect(f.coverageScore).toBe(0);
+    expect(f.attentionGapScore).toBe(0);
   });
 
   it('respects a custom funding weight', () => {
@@ -213,11 +266,16 @@ describe('scoreCohort — funding amplification', () => {
 });
 
 describe('rankByAttentionGap', () => {
-  it('ranks descending by gap, 1-based', () => {
+  it('ranks descending by score, 1-based, with the under-reported crisis first', () => {
     const ranked = rankByAttentionGap(scoreCohort([wellCovered, underReported, quiet]));
     expect(ranked[0]!.iso3).toBe('SDN');
-    expect(ranked[0]!.rank).toBe(1);
-    expect(ranked.at(-1)!.iso3).toBe('UKR');
+    expect(ranked.map((r) => r.rank)).toEqual([1, 2, 3]);
+    // The invariant that matters: fully sorted, non-increasing.
+    for (let i = 1; i < ranked.length; i++) {
+      expect(ranked[i - 1]!.attentionGapScore).toBeGreaterThanOrEqual(
+        ranked[i]!.attentionGapScore,
+      );
+    }
   });
 
   it('breaks ties on iso3 so ordering is stable across runs', () => {

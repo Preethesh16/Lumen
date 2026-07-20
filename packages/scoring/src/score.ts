@@ -8,7 +8,7 @@ import { NEUTRAL_SCORE, normalizeCohort, weightedMean } from './normalize.js';
  * versions can be compared over the same period instead of one silently
  * overwriting the other.
  */
-export const ALGORITHM_VERSION = 'v1.0.0';
+export const ALGORITHM_VERSION = 'v1.1.0';
 
 /** One crisis's raw readings for a single scoring run. Null = no data. */
 export interface CohortMember {
@@ -19,14 +19,26 @@ export interface CohortMember {
 
 export interface ScoringOptions {
   /**
-   * How much underfunding amplifies the gap. At the default 0.5, a fully
+   * How much underfunding *amplifies* the gap. At the default 0.5, a fully
    * unfunded appeal multiplies the raw gap by 1.5.
-   *
-   * Underfunding *amplifies* rather than *adds* deliberately: it is evidence
-   * about an existing gap, not an independent reason to care. Adding it would
-   * let a well-covered crisis with a shaky appeal outrank an invisible one.
    */
   fundingWeight?: number;
+  /**
+   * How much underfunding contributes *additively*, independent of the gap.
+   *
+   * This term exists because of a real failure of the multiplicative-only
+   * model (v1.0.0), observed live: normalization floors the cohort minimum at
+   * exactly 0, so a crisis that is least-needy-on-every-axis gets need = 0 and
+   * coverage = 0, a raw gap of 0, which `× (1 + fundingWeight·gap)` cannot
+   * lift no matter how underfunded it is. Chad — 1.9M displaced, 89% unfunded,
+   * near-invisible — scored 0.000, tied with countries that had no data.
+   *
+   * The additive term rescues exactly that case: severe underfunding is now an
+   * independent reason to surface a crisis, not only a multiplier on an
+   * existing gap. The trade-off, accepted deliberately: a well-covered but
+   * underfunded crisis gets a small positive nudge it did not get before.
+   */
+  fundingBonus?: number;
   /** Relative contributions to need_score. Re-normalized over available data. */
   needWeights?: {
     displacement?: number;
@@ -37,6 +49,7 @@ export interface ScoringOptions {
 
 const DEFAULT_OPTIONS = {
   fundingWeight: 0.5,
+  fundingBonus: 0.3,
   needWeights: {
     displacement: 0.5,
     appealSize: 0.3,
@@ -120,6 +133,7 @@ export function scoreCohort(
   if (cohort.length === 0) return [];
 
   const fundingWeight = options.fundingWeight ?? DEFAULT_OPTIONS.fundingWeight;
+  const fundingBonus = options.fundingBonus ?? DEFAULT_OPTIONS.fundingBonus;
   const needWeights = { ...DEFAULT_OPTIONS.needWeights, ...options.needWeights };
 
   const displacement = normalizeMetric(cohort, 'displaced_persons');
@@ -169,9 +183,14 @@ export function scoreCohort(
       fundingGapPct = 1 - Math.min(1, Math.max(0, fundedPct));
     }
 
+    // Underfunding acts two ways: it amplifies an existing gap, and it adds an
+    // independent signal so a genuinely underfunded crisis is not zeroed out
+    // when min-max normalization puts it at the cohort floor on every axis.
+    // See ScoringOptions.fundingBonus for the failure this additive term fixes.
     const rawGap = needScore - coverageScore;
     const amplifier = fundingGapPct === null ? 1 : 1 + fundingWeight * fundingGapPct;
-    const attentionGapScore = rawGap * amplifier;
+    const bonus = fundingGapPct === null ? 0 : fundingBonus * fundingGapPct;
+    const attentionGapScore = rawGap * amplifier + bonus;
 
     return {
       crisisId: member.crisisId,
