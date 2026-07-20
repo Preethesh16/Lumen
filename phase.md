@@ -22,18 +22,24 @@ compile against the same `shared-types` version.
 ## Phase 2 — Core Agent Logic (Week 2)
 - [ ] (P) Scoring node (need vs. coverage → attention gap score)
 - [ ] (P) API endpoints to serve ranked crises
-- [ ] (D) Content-generation agent (Claude API) — 3 audience-tailored briefs
-- [ ] (D) Grounding validator — every stat in output traces to input payload
+- [x] (D) Content-generation agent (Claude API) — 3 audience-tailored briefs
+- [x] (D) Grounding validator — every stat in output traces to input payload
+      *(15 tests, including fabricated-figure cases. Not yet exercised
+      against live Claude API output — that lands when a real crisis row
+      exists to generate from.)*
 
 **Acceptance:** given a real crisis row, the generator returns three briefs
 containing zero statistics absent from the input payload, proven by a test
 that feeds it a crisis with known figures and asserts no others appear.
 
 ## Phase 3 — Delivery + Frontend (Week 3)
-- [ ] (D) Telegram outreach agent — push top-ranked briefs to a channel
-- [ ] (D) Resend weekly digest email
-- [ ] (D) Next.js dashboard — ranked list, detail + trend chart, briefs view
-- [ ] (D) CI/CD — lint/typecheck/test on push, deploy on merge to main
+- [x] (D) Telegram outreach agent — push top-ranked briefs to a channel
+      *(built and unit-tested; not yet sent through a real bot)*
+- [x] (D) Resend weekly digest email
+      *(built and unit-tested; not yet sent through a real Resend account)*
+- [x] (D) Next.js dashboard — ranked list, detail + trend chart, briefs view
+- [x] (D) CI/CD — lint/typecheck/test on push, deploy on merge to main
+      *(deploy step skips cleanly until VERCEL_TOKEN is added)*
 
 **Acceptance:** dashboard renders live data from the deployed API, degrades
 cleanly when the API is down or returns an empty list, and a brief posted to

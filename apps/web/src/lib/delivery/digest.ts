@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 import type { Crisis } from '@lumen/shared-types';
-import type { DeliveryResult } from './telegram.js';
+import type { DeliveryResult } from './telegram';
 
 /**
  * Weekly digest email — the top under-reported crises by attention gap.

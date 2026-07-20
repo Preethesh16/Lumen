@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Brief, Crisis } from '@lumen/shared-types';
-import { formatBrief } from '../telegram.js';
-import { renderDigest } from '../digest.js';
-import { sudanInput, noFundingDataInput } from '../../content-agent/__tests__/fixtures.js';
+import { formatBrief } from '../telegram';
+import { renderDigest } from '../digest';
+import { sudanInput, noFundingDataInput } from '../../content-agent/__tests__/fixtures';
 
 const crisis: Crisis = sudanInput.crisis;
 

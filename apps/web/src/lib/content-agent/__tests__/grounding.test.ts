@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { extractFigures, validateGrounding } from '../grounding.js';
-import { noFundingDataInput, sudanInput } from './fixtures.js';
+import { extractFigures, validateGrounding } from '../grounding';
+import { noFundingDataInput, sudanInput } from './fixtures';
 
 describe('extractFigures', () => {
   it('reads thousands separators and magnitude words', () => {

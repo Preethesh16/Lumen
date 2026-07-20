@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { Brief, BriefAudience, BriefInput, StatCitation } from '@lumen/shared-types';
-import { validateGrounding } from './grounding.js';
-import { audiencePrompt, systemPrompt } from './prompts.js';
+import { validateGrounding } from './grounding';
+import { audiencePrompt, systemPrompt } from './prompts';
 
 const DEFAULT_MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-5';
 const MAX_ATTEMPTS = 4;
