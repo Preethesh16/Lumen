@@ -28,9 +28,9 @@ export function TrendChart({ points }: { points: ScoreHistoryPoint[] }) {
   }
 
   const data = [...points]
-    .sort((a, b) => a.computedAt.localeCompare(b.computedAt))
+    .sort((a, b) => a.scoredFor.localeCompare(b.scoredFor))
     .map((point) => ({
-      date: new Date(point.computedAt).toLocaleDateString('en-GB', {
+      date: new Date(point.scoredFor).toLocaleDateString('en-GB', {
         day: 'numeric',
         month: 'short',
       }),

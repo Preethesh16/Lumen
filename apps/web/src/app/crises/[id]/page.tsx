@@ -1,18 +1,20 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ApiUnavailableError, getCrisis } from '@/lib/api/client';
-import { asPoints, formatDate, fundingLabel, trendLabel, trendOf } from '@/lib/format';
+import {
+  asPoints,
+  formatDate,
+  fundingLabel,
+  gapPoints,
+  metricLabel,
+  sourceLabel,
+  trendLabel,
+  trendOf,
+} from '@/lib/format';
 import { TrendChart } from '@/components/trend-chart';
 import { ErrorState, MockDataNotice } from '@/components/states';
 
 export const dynamic = 'force-dynamic';
-
-const SOURCE_NAMES: Record<string, string> = {
-  gdelt: 'GDELT',
-  reliefweb: 'ReliefWeb',
-  unhcr: 'UNHCR',
-  'ocha-fts': 'UN OCHA FTS',
-};
 
 export default async function CrisisDetailPage({
   params,
@@ -26,16 +28,18 @@ export default async function CrisisDetailPage({
     result = await getCrisis(id);
   } catch (error) {
     if (error instanceof ApiUnavailableError) {
-      return <ErrorState detail="The Lumen API did not respond, so this crisis could not be loaded." />;
+      return (
+        <ErrorState detail="The Lumen API did not respond, so this crisis could not be loaded." />
+      );
     }
     throw error;
   }
 
   if (!result) notFound();
 
-  const { data, isMock } = result;
-  const { crisis, history, sources } = data;
-  const trend = trendOf(history.points);
+  const { data: crisis, isMock } = result;
+  const { latestScore, history, latestObservations } = crisis;
+  const trend = trendOf(history);
 
   return (
     <>
@@ -47,14 +51,15 @@ export default async function CrisisDetailPage({
 
       <h1 className="mt-4 text-2xl font-semibold tracking-tight">{crisis.name}</h1>
       <p className="mt-1 text-sm text-neutral-500">
-        {crisis.country} · last scored {formatDate(crisis.computedAt)}
+        {crisis.region ?? crisis.iso3} · scored {formatDate(latestScore.scoredFor)} ·
+        algorithm {latestScore.algorithmVersion}
       </p>
 
       <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Stat label="Need" value={asPoints(crisis.needScore)} />
-        <Stat label="Coverage" value={asPoints(crisis.coverageScore)} />
-        <Stat label="Attention gap" value={asPoints(crisis.attentionGapScore)} emphasis />
-        <Stat label="Funding" value={fundingLabel(crisis)} />
+        <Stat label="Need" value={asPoints(latestScore.needScore)} />
+        <Stat label="Coverage" value={asPoints(latestScore.coverageScore)} />
+        <Stat label="Attention gap" value={gapPoints(latestScore.attentionGapScore)} emphasis />
+        <Stat label="Funding" value={fundingLabel(latestScore)} />
       </dl>
 
       <section className="mt-10">
@@ -62,12 +67,12 @@ export default async function CrisisDetailPage({
           <h2 className="text-lg font-medium">Need against coverage</h2>
           <span className="text-sm text-neutral-500">{trendLabel(trend)}</span>
         </div>
-        <TrendChart points={history.points} />
+        <TrendChart points={history} />
       </section>
 
       <section className="mt-10">
         <h2 className="mb-3 text-lg font-medium">Underlying data</h2>
-        {sources.length === 0 ? (
+        {latestObservations.length === 0 ? (
           <p className="text-sm text-neutral-500">
             No source observations were recorded for this scoring run.
           </p>
@@ -78,47 +83,43 @@ export default async function CrisisDetailPage({
                 <th className="py-2 pr-4 font-medium">Measure</th>
                 <th className="py-2 pr-4 text-right font-medium">Value</th>
                 <th className="py-2 pr-4 font-medium">Source</th>
-                <th className="py-2 font-medium">Retrieved</th>
+                <th className="py-2 font-medium">Observed</th>
               </tr>
             </thead>
             <tbody>
-              {sources.map((observation, index) => (
-                <tr
-                  key={`${observation.source}-${index}`}
-                  className="border-b border-neutral-100 last:border-0 dark:border-neutral-900"
-                >
-                  <td className="py-2 pr-4">{observation.label}</td>
-                  <td className="py-2 pr-4 text-right tabular-nums">
-                    {observation.value.toLocaleString('en-GB')}{' '}
-                    <span className="text-neutral-500">{observation.unit}</span>
-                  </td>
-                  <td className="py-2 pr-4 text-neutral-500">
-                    {observation.url ? (
-                      <a
-                        href={observation.url}
-                        className="underline-offset-4 hover:underline"
-                        rel="noreferrer"
-                        target="_blank"
-                      >
-                        {SOURCE_NAMES[observation.source] ?? observation.source}
-                      </a>
-                    ) : (
-                      (SOURCE_NAMES[observation.source] ?? observation.source)
-                    )}
-                  </td>
-                  <td className="py-2 text-neutral-500">
-                    {formatDate(observation.retrievedAt)}
-                  </td>
-                </tr>
-              ))}
+              {latestObservations.map((observation, index) => {
+                const metric = metricLabel(observation.metric);
+                return (
+                  <tr
+                    key={`${observation.source}-${observation.metric}-${index}`}
+                    className="border-b border-neutral-100 last:border-0 dark:border-neutral-900"
+                  >
+                    <td className="py-2 pr-4">{metric.label}</td>
+                    <td className="py-2 pr-4 text-right tabular-nums">
+                      {observation.value.toLocaleString('en-GB')}{' '}
+                      <span className="text-neutral-500">{metric.unit}</span>
+                    </td>
+                    <td className="py-2 pr-4 text-neutral-500">
+                      {sourceLabel(observation.source)}
+                    </td>
+                    <td className="py-2 text-neutral-500">
+                      {formatDate(observation.observedAt)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
+        <p className="mt-3 text-xs text-neutral-500">
+          These are the stored readings the score was computed from — and the
+          only facts a generated brief is permitted to use.
+        </p>
       </section>
 
       <div className="mt-10">
         <Link
-          href={`/crises/${crisis.crisisId}/briefs`}
+          href={`/crises/${crisis.id}/briefs`}
           className="inline-block rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white dark:bg-neutral-100 dark:text-neutral-900"
         >
           View generated briefs

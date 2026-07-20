@@ -1,0 +1,88 @@
+{
+  "name": "Lumen — ReliefWeb active disasters",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "15 2 * * *" }]
+        }
+      },
+      "id": "rw-schedule",
+      "name": "Daily 02:15 UTC",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-200, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.reliefweb.int/v2/disasters",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "appname", "value": "={{ $env.RELIEFWEB_APPNAME }}" },
+            { "name": "profile", "value": "list" },
+            { "name": "preset", "value": "latest" },
+            { "name": "limit", "value": "500" },
+            { "name": "filter[field]", "value": "status" },
+            { "name": "filter[value]", "value": "ongoing" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "id": "rw-http",
+      "name": "ReliefWeb disasters",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [40, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 10000,
+      "notes": "BLOCKED until an appname is registered. Verified live on 2026-07-20: an unregistered appname returns HTTP 403 AccessDeniedHttpException, not a rate-limit — the project plan's assumption that any appname string works is wrong. Register at https://apidoc.reliefweb.int/parameters#appname, then set RELIEFWEB_APPNAME. Still free, still no API key."
+    },
+    {
+      "parameters": {
+        "jsCode": "// ReliefWeb returns one entry per disaster, each carrying its country list.\n// We aggregate to a per-country active-disaster count, which is the signal the\n// scoring function consumes.\nconst observedAt = new Date().toISOString().slice(0, 10);\nconst body = $input.first().json;\n\n// An unregistered appname returns 403 with an error object rather than data.\n// Name that case explicitly so it does not read as a generic parse failure.\nif (body?.status === 403 || body?.error?.type === 'AccessDeniedHttpException') {\n  throw new Error(\n    'ReliefWeb rejected the appname \"' + ($env.RELIEFWEB_APPNAME ?? '') + '\". ' +\n    'It must be registered at https://apidoc.reliefweb.int/parameters#appname'\n  );\n}\n\nconst entries = body?.data;\nif (!Array.isArray(entries)) {\n  throw new Error('ReliefWeb returned an unexpected shape — no data array present.');\n}\n\nconst counts = new Map();\n\nfor (const entry of entries) {\n  const countries = entry?.fields?.country ?? [];\n  for (const country of countries) {\n    // ReliefWeb uses ISO3 in `iso3`, lowercase in some responses.\n    const iso3 = String(country?.iso3 ?? '').toUpperCase();\n    if (iso3.length !== 3) continue;\n    counts.set(iso3, (counts.get(iso3) ?? 0) + 1);\n  }\n}\n\nif (counts.size === 0) {\n  throw new Error('ReliefWeb returned no disasters with a usable ISO3 country code.');\n}\n\nconst observations = [...counts.entries()].map(([iso3, count]) => ({\n  iso3,\n  source: 'reliefweb',\n  metric: 'active_disaster_count',\n  value: count,\n  observedAt,\n}));\n\n// Countries the API does not know are dropped by the API, not here — it\n// reports them as warnings so data-quality drift stays visible.\nreturn [{ json: { source: 'reliefweb', observations, triggerScoring: false } }];"
+      },
+      "id": "rw-parse",
+      "name": "Aggregate per country",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [260, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.LUMEN_API_BASE_URL }}/webhook/n8n-score-update",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-lumen-webhook-secret", "value": "={{ $env.N8N_WEBHOOK_SECRET }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": { "timeout": 30000 }
+      },
+      "id": "rw-post",
+      "name": "POST to Lumen API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    }
+  ],
+  "connections": {
+    "Daily 02:15 UTC": { "main": [[{ "node": "ReliefWeb disasters", "type": "main", "index": 0 }]] },
+    "ReliefWeb disasters": { "main": [[{ "node": "Aggregate per country", "type": "main", "index": 0 }]] },
+    "Aggregate per country": { "main": [[{ "node": "POST to Lumen API", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all"
+  },
+  "tags": ["lumen", "ingestion"]
+}

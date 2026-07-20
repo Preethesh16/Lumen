@@ -1,4 +1,6 @@
-import type { Brief, Crisis } from '@lumen/shared-types';
+import type { RankedCrisis } from '@lumen/shared-types';
+import type { GeneratedBrief } from '../content-agent/types';
+import { fundingLabel, gapPoints } from '../format';
 
 /**
  * Pushes newly generated briefs to a Telegram channel.
@@ -34,18 +36,16 @@ function escapeMarkdown(text: string): string {
   return text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, (char) => `\\${char}`);
 }
 
-export function formatBrief(crisis: Crisis, brief: Brief): string {
-  const gap = (crisis.attentionGapScore * 100).toFixed(0);
-
-  const funding =
-    crisis.fundingGapPct !== undefined
-      ? `${crisis.fundingGapPct}% of the appeal unfunded`
-      : 'no appeal funding data available';
+export function formatBrief(crisis: RankedCrisis, brief: GeneratedBrief): string {
+  const gap = gapPoints(crisis.latestScore.attentionGapScore);
+  // fundingLabel is the single place that knows null != 0. Going through it
+  // here keeps Telegram consistent with the dashboard and the digest.
+  const funding = fundingLabel(crisis.latestScore).toLowerCase();
 
   const message = [
     `*${escapeMarkdown(brief.headline)}*`,
     '',
-    escapeMarkdown(`${crisis.name} — ${crisis.country}`),
+    escapeMarkdown(`${crisis.name}${crisis.region ? ` — ${crisis.region}` : ''}`),
     escapeMarkdown(`Attention gap: ${gap} · ${funding}`),
     '',
     escapeMarkdown(brief.body),
@@ -71,7 +71,10 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  * Sends one brief. Never throws — a delivery failure should be logged and
  * surfaced, not allowed to abort a batch of otherwise-deliverable briefs.
  */
-export async function sendBrief(crisis: Crisis, brief: Brief): Promise<DeliveryResult> {
+export async function sendBrief(
+  crisis: RankedCrisis,
+  brief: GeneratedBrief,
+): Promise<DeliveryResult> {
   let token: string;
   let chatId: string;
   try {

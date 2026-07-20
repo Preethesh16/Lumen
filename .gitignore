@@ -1,18 +1,24 @@
 node_modules/
 dist/
-.next/
-out/
 build/
+.next/
+coverage/
 
-# Secrets — never commit. See .env.example for the required variables.
+# Secrets — never commit
 .env
 .env.local
 .env.*.local
+!.env.example
 
-# Local dev caches for upstream APIs, so test runs don't burn GDELT/ReliefWeb quota
+# Local dev API response cache (avoids burning GDELT/ReliefWeb quota on repeat runs)
 .cache/
-*.log
 
+# n8n local runtime state
+infra/.n8n/
+
+# Editor / OS
 .DS_Store
-coverage/
-*.tsbuildinfo
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json

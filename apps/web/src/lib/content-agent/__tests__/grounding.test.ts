@@ -27,11 +27,18 @@ describe('extractFigures', () => {
 
 describe('validateGrounding — accepts what the model was given', () => {
   it('passes a body quoting exact payload figures', () => {
-    const body = 'UNHCR records 1,247,891 people displaced. GDELT logged 37 articles in 24 hours.';
+    const body = 'UNHCR records 1,247,891 people displaced as of the latest run.';
     expect(validateGrounding(body, sudanInput)).toEqual({
       grounded: true,
       unsupportedFigures: [],
     });
+  });
+
+  it('accepts a 0..1 funding share written as a percentage', () => {
+    // fundingGapPct is stored as 0.68; a brief will naturally write "68%".
+    // Both forms have to trace, or every honest funding sentence is flagged.
+    const body = 'The appeal is 68% unfunded.';
+    expect(validateGrounding(body, sudanInput).grounded).toBe(true);
   });
 
   it('permits the rounding the prompt explicitly allows', () => {
@@ -42,7 +49,7 @@ describe('validateGrounding — accepts what the model was given', () => {
   it('passes prose describing scores qualitatively rather than quoting them', () => {
     const body =
       'This is among the least-covered crises Lumen tracks, despite need remaining near the ' +
-      'top of the set. Only 37 articles appeared in the last 24 hours.';
+      'top of the set. Coverage has fallen across the last 3 weeks of observations.';
     expect(validateGrounding(body, sudanInput).grounded).toBe(true);
   });
 });

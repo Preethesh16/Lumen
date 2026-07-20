@@ -1,0 +1,76 @@
+name: lumen
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lumen-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lumen}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required — copy .env.example to .env}
+      POSTGRES_DB: ${POSTGRES_DB:-lumen}
+    ports:
+      # Published so drizzle-kit and the API can reach Postgres from the host.
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # n8n must wait for a database that actually accepts connections, not
+      # merely a container that has started.
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lumen} -d ${POSTGRES_DB:-lumen}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: lumen-n8n
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # n8n keeps its own workflow state in the same Postgres instance,
+      # in a separate schema so it never collides with Lumen's tables.
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB:-lumen}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER:-lumen}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      DB_POSTGRESDB_SCHEMA: n8n
+
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER:-admin}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD:?N8N_BASIC_AUTH_PASSWORD is required}
+      # Generate with `openssl rand -hex 16`.
+      N8N_ENCRYPTION_KEY: "${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY is required}"
+
+      N8N_PORT: 5678
+      N8N_HOST: localhost
+      WEBHOOK_URL: http://localhost:${N8N_PORT:-5678}/
+      GENERIC_TIMEZONE: Etc/UTC
+      TZ: Etc/UTC
+
+      # Where the ingestion workflows POST their results.
+      LUMEN_API_BASE_URL: ${LUMEN_API_BASE_URL:-http://host.docker.internal:4000}
+      N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET:?N8N_WEBHOOK_SECRET is required}
+      RELIEFWEB_APPNAME: ${RELIEFWEB_APPNAME:-lumen-crisis-monitor}
+
+      # Opt out of anonymous telemetry.
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      # Workflow JSON is versioned in git; mounted read-only for import.
+      - ./../n8n/workflows:/workflows:ro
+    extra_hosts:
+      # Lets n8n reach an API running on the host (Linux parity with Docker Desktop).
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  postgres_data:
+  n8n_data:

@@ -1,4 +1,4 @@
-import type { BriefInput, GroundingResult } from '@lumen/shared-types';
+import type { BriefInput, GroundingResult } from './types';
 
 /**
  * Checks that every figure appearing in a generated brief traces back to a
@@ -95,21 +95,19 @@ function applyMagnitude(base: number, magnitude?: string): number {
 export function allowedValues(input: BriefInput): number[] {
   const values: number[] = [];
 
-  for (const observation of input.sources) {
+  for (const observation of input.observations) {
     values.push(observation.value);
   }
 
-  if (input.crisis.fundingGapPct !== undefined) {
-    values.push(input.crisis.fundingGapPct);
-  }
-
-  for (const point of input.history.points) {
-    if (point.fundingGapPct !== undefined) values.push(point.fundingGapPct);
+  if (input.score.fundingGapPct !== null) {
+    // Stored as a 0..1 share; a brief will legitimately write it as a
+    // percentage, so both forms have to be traceable.
+    values.push(input.score.fundingGapPct, input.score.fundingGapPct * 100);
   }
 
   // The number of observations and history points are legitimately quotable
   // ("across four data sources", "over six weeks of observations").
-  values.push(input.sources.length, input.history.points.length);
+  values.push(input.observations.length, input.history.length);
 
   return values;
 }

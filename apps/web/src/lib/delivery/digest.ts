@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
-import type { Crisis } from '@lumen/shared-types';
+import type { RankedCrisis } from '@lumen/shared-types';
+import { fundingLabel, gapPoints } from '../format';
 import type { DeliveryResult } from './telegram';
 
 /**
@@ -32,7 +33,7 @@ function escapeHtml(text: string): string {
     .replace(/"/g, '&quot;');
 }
 
-export function renderDigest(crises: Crisis[], dashboardUrl: string): string {
+export function renderDigest(crises: RankedCrisis[], dashboardUrl: string): string {
   // The database is empty until n8n's first ingestion run completes, so the
   // no-data case is a real state this will hit, not a defensive afterthought.
   if (crises.length === 0) {
@@ -47,19 +48,16 @@ export function renderDigest(crises: Crisis[], dashboardUrl: string): string {
 
   const rows = crises
     .map((crisis) => {
-      const funding =
-        crisis.fundingGapPct !== undefined
-          ? `${crisis.fundingGapPct}% unfunded`
-          : 'no appeal data';
+      const funding = fundingLabel(crisis.latestScore);
 
       return `
         <tr>
           <td style="padding:8px 12px;border-bottom:1px solid #e5e5e5;">
             <strong>${escapeHtml(crisis.name)}</strong><br>
-            <span style="color:#666;font-size:13px;">${escapeHtml(crisis.country)}</span>
+            <span style="color:#666;font-size:13px;">${escapeHtml(crisis.region ?? '')}</span>
           </td>
           <td style="padding:8px 12px;border-bottom:1px solid #e5e5e5;text-align:right;">
-            ${(crisis.attentionGapScore * 100).toFixed(0)}
+            ${gapPoints(crisis.latestScore.attentionGapScore)}
           </td>
           <td style="padding:8px 12px;border-bottom:1px solid #e5e5e5;text-align:right;color:#666;">
             ${escapeHtml(funding)}
@@ -95,7 +93,10 @@ export function renderDigest(crises: Crisis[], dashboardUrl: string): string {
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Sends the weekly digest. Never throws — failures are returned for logging. */
-export async function sendDigest(crises: Crisis[], recipients: string[]): Promise<DeliveryResult> {
+export async function sendDigest(
+  crises: RankedCrisis[],
+  recipients: string[],
+): Promise<DeliveryResult> {
   if (recipients.length === 0) {
     return { delivered: false, error: 'No digest recipients configured' };
   }

@@ -1,9 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { Brief, BriefAudience, BriefInput, StatCitation } from '@lumen/shared-types';
+import type { Brief, BriefAudience } from '@lumen/shared-types';
+import type { BriefInput, GeneratedBrief, StatCitation } from './types';
 import { validateGrounding } from './grounding';
 import { audiencePrompt, systemPrompt } from './prompts';
 
 const DEFAULT_MODEL = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-5';
+/** Bumped whenever a file in prompts/ changes, and stored on every brief. */
+export const PROMPT_VERSION = 'v1';
 const MAX_ATTEMPTS = 4;
 const BASE_BACKOFF_MS = 1_000;
 
@@ -99,7 +102,7 @@ export async function generateBrief(
   input: BriefInput,
   audience: BriefAudience,
   model: string = DEFAULT_MODEL,
-): Promise<Brief> {
+): Promise<GeneratedBrief> {
   const [system, instructions] = await Promise.all([systemPrompt(), audiencePrompt(audience)]);
 
   let lastError: unknown;
@@ -123,21 +126,24 @@ export async function generateBrief(
       const grounding = validateGrounding(output.body, input);
       if (!grounding.grounded) {
         throw new GroundingViolationError(
-          input.crisis.crisisId,
+          input.score.crisisId,
           audience,
           grounding.unsupportedFigures,
         );
       }
 
       return {
-        briefId: `${input.crisis.crisisId}-${audience}-${Date.now()}`,
-        crisisId: input.crisis.crisisId,
+        crisisId: input.score.crisisId,
+        // Links the brief to the exact score row it was generated from, so
+        // every figure traces to stored data rather than to a moment in time.
+        scoreId: input.score.id,
         audience,
         headline: output.headline,
         body: output.body,
         statsUsed: output.statsUsed,
-        generatedAt: new Date().toISOString(),
         model,
+        promptVersion: PROMPT_VERSION,
+        generatedAt: new Date().toISOString(),
       };
     } catch (error) {
       // A grounding violation is a content failure, not a transport failure.
@@ -155,9 +161,31 @@ export async function generateBrief(
   throw lastError;
 }
 
+/**
+ * Flattens a generated brief into the stored `Brief` shape.
+ *
+ * NOTE: `Brief.content` is a single string, so `statsUsed` has nowhere to go
+ * and is dropped here. Those citations are the visible evidence that grounding
+ * happened, so this is a real loss, not a formatting detail — the UI reads the
+ * structured form directly and never round-trips through this. Resolving it
+ * needs a schema change agreed with Preethesh; see docs/architecture.md.
+ */
+export function toStoredBrief(generated: GeneratedBrief, id: string): Brief {
+  return {
+    id,
+    crisisId: generated.crisisId,
+    scoreId: generated.scoreId,
+    audience: generated.audience,
+    content: `${generated.headline}\n\n${generated.body}`,
+    model: generated.model,
+    promptVersion: generated.promptVersion,
+    generatedAt: generated.generatedAt,
+  };
+}
+
 /** Generates all three audience briefs for one crisis. */
 export async function generateAllBriefs(input: BriefInput): Promise<{
-  briefs: Brief[];
+  briefs: GeneratedBrief[];
   failures: { audience: BriefAudience; error: string }[];
 }> {
   const audiences: BriefAudience[] = ['journalist', 'donor', 'ngo'];
@@ -166,7 +194,7 @@ export async function generateAllBriefs(input: BriefInput): Promise<{
     audiences.map((audience) => generateBrief(input, audience)),
   );
 
-  const briefs: Brief[] = [];
+  const briefs: GeneratedBrief[] = [];
   const failures: { audience: BriefAudience; error: string }[] = [];
 
   settled.forEach((result, index) => {

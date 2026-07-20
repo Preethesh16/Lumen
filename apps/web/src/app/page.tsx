@@ -1,20 +1,23 @@
 import Link from 'next/link';
 import { ApiUnavailableError, getCrises } from '@/lib/api/client';
-import { asPoints, formatDate, fundingLabel } from '@/lib/format';
+import { asPoints, formatDate, fundingLabel, gapPoints, rankDeltaLabel } from '@/lib/format';
 import { EmptyState, ErrorState, MockDataNotice } from '@/components/states';
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
   let crises;
+  let scoredFor: string | null = null;
   let isMock = false;
 
   try {
-    ({ data: crises, isMock } = await getCrises());
+    const response = await getCrises();
+    ({ crises, scoredFor } = response.data);
+    isMock = response.isMock;
   } catch (error) {
     if (error instanceof ApiUnavailableError) {
       return (
-        <ErrorState detail="The Lumen API did not respond. Scores are computed daily by the ingestion pipeline; if this persists, check that the API and n8n are running." />
+        <ErrorState detail="The Lumen API did not respond. Scores are computed nightly by the ingestion pipeline; if this persists, check that the API and n8n are running." />
       );
     }
     throw error;
@@ -24,7 +27,7 @@ export default async function HomePage() {
     return (
       <EmptyState
         title="No crises scored yet"
-        detail="The ingestion pipeline has not completed a run. Scores appear here once GDELT, ReliefWeb, UNHCR, and OCHA FTS data has been collected and scored."
+        detail="The ingestion pipeline has not completed a run. Crises appear here once GDELT, ReliefWeb, UNHCR, and OCHA FTS data has been collected and scored."
       />
     );
   }
@@ -34,18 +37,18 @@ export default async function HomePage() {
       {isMock && <MockDataNotice />}
 
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Under-reported crises
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Under-reported crises</h1>
         <p className="mt-1 text-sm text-neutral-500">
           Ranked by attention gap — how far humanitarian need exceeds media
-          coverage. Higher is more neglected.
+          coverage, amplified by underfunding. Higher is more neglected.
+          {scoredFor && ` Scored ${formatDate(scoredFor)}.`}
         </p>
       </div>
 
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-neutral-200 text-left text-xs uppercase tracking-wide text-neutral-500 dark:border-neutral-800">
+            <th className="py-2 pr-2 font-medium">#</th>
             <th className="py-2 pr-4 font-medium">Crisis</th>
             <th className="py-2 pr-4 text-right font-medium">Need</th>
             <th className="py-2 pr-4 text-right font-medium">Coverage</th>
@@ -56,42 +59,48 @@ export default async function HomePage() {
         <tbody>
           {crises.map((crisis) => (
             <tr
-              key={crisis.crisisId}
+              key={crisis.id}
               className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50 dark:border-neutral-900 dark:hover:bg-neutral-900/50"
             >
+              <td className="py-3 pr-2 tabular-nums text-neutral-400">{crisis.rank}</td>
               <td className="py-3 pr-4">
                 <Link
-                  href={`/crises/${crisis.crisisId}`}
+                  href={`/crises/${crisis.id}`}
                   className="font-medium underline-offset-4 hover:underline"
                 >
                   {crisis.name}
                 </Link>
                 <div className="text-xs text-neutral-500">
-                  {crisis.country} · scored {formatDate(crisis.computedAt)}
+                  {crisis.region ?? crisis.iso3} · {rankDeltaLabel(crisis.rankDelta)}
                 </div>
               </td>
               <td className="py-3 pr-4 text-right tabular-nums">
-                {asPoints(crisis.needScore)}
+                {asPoints(crisis.latestScore.needScore)}
               </td>
               <td className="py-3 pr-4 text-right tabular-nums text-neutral-500">
-                {asPoints(crisis.coverageScore)}
+                {asPoints(crisis.latestScore.coverageScore)}
               </td>
               <td
                 className={`py-3 pr-4 text-right font-medium tabular-nums ${
-                  crisis.attentionGapScore > 0
+                  crisis.latestScore.attentionGapScore > 0
                     ? 'text-amber-700 dark:text-amber-400'
                     : 'text-neutral-400'
                 }`}
               >
-                {asPoints(crisis.attentionGapScore)}
+                {gapPoints(crisis.latestScore.attentionGapScore)}
               </td>
               <td className="py-3 text-right text-neutral-500">
-                {fundingLabel(crisis)}
+                {fundingLabel(crisis.latestScore)}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      <p className="mt-4 text-xs text-neutral-500">
+        Need and coverage are cohort-relative, shown 0–100. The gap is on its
+        own scale and is not a percentage.
+      </p>
     </>
   );
 }

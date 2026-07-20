@@ -1,0 +1,7 @@
+# Reserved for Deepthi's Next.js 15 dashboard.
+#
+# Intentionally empty — run `create-next-app` into this directory. Nothing has
+# been scaffolded here, so there is nothing to unpick first.
+#
+# Consume the API via `@lumen/shared-types`; do not redeclare the response
+# shapes locally, or the two sides will drift silently.

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import type { Brief, BriefAudience } from '@lumen/shared-types';
+import type { BriefAudience } from '@lumen/shared-types';
+import type { GeneratedBrief } from '@/lib/content-agent/types';
 
 const AUDIENCE_LABELS: Record<BriefAudience, string> = {
   journalist: 'Journalist pitch',
@@ -13,7 +14,7 @@ export function BriefViewer({
   briefs,
   failures,
 }: {
-  briefs: Brief[];
+  briefs: GeneratedBrief[];
   failures: { audience: BriefAudience; error: string }[];
 }) {
   const [active, setActive] = useState(0);
@@ -52,7 +53,7 @@ export function BriefViewer({
       <div className="mb-4 flex flex-wrap gap-2 border-b border-neutral-200 dark:border-neutral-800">
         {briefs.map((entry, index) => (
           <button
-            key={entry.briefId}
+            key={entry.audience}
             onClick={() => setActive(index)}
             className={`-mb-px border-b-2 px-3 py-2 text-sm ${
               index === active

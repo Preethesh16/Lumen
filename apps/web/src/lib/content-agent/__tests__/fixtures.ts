@@ -1,102 +1,97 @@
-import type { BriefInput } from '@lumen/shared-types';
+import type { BriefInput } from '../types';
 
 /**
  * A crisis with deliberately distinctive figures, so a test can tell the
  * difference between a number the model was given and one it invented.
  */
 export const sudanInput: BriefInput = {
-  crisis: {
-    crisisId: 'sdn-displacement-2026',
-    name: 'Sudan conflict displacement',
-    country: 'Sudan',
-    countryCode: 'SDN',
+  crisisName: 'Sudan',
+  country: 'Eastern Africa',
+  iso3: 'SDN',
+  score: {
+    id: 'score-sdn',
+    crisisId: 'sdn',
     needScore: 0.91,
     coverageScore: 0.14,
-    attentionGapScore: 0.77,
-    fundingGapPct: 68,
+    // 0..1 share of the appeal unfunded — 68%.
+    fundingGapPct: 0.68,
+    attentionGapScore: 1.219,
+    algorithmVersion: 'v1',
+    scoredFor: '2026-07-19',
     computedAt: '2026-07-19T06:00:00.000Z',
   },
-  history: {
-    crisisId: 'sdn-displacement-2026',
-    points: [
-      {
-        computedAt: '2026-07-05T06:00:00.000Z',
-        needScore: 0.88,
-        coverageScore: 0.19,
-        attentionGapScore: 0.69,
-        fundingGapPct: 64,
-      },
-      {
-        computedAt: '2026-07-12T06:00:00.000Z',
-        needScore: 0.9,
-        coverageScore: 0.16,
-        attentionGapScore: 0.74,
-        fundingGapPct: 66,
-      },
-      {
-        computedAt: '2026-07-19T06:00:00.000Z',
-        needScore: 0.91,
-        coverageScore: 0.14,
-        attentionGapScore: 0.77,
-        fundingGapPct: 68,
-      },
-    ],
-  },
-  sources: [
+  history: [
+    {
+      scoredFor: '2026-07-05',
+      needScore: 0.88,
+      coverageScore: 0.19,
+      attentionGapScore: 0.69,
+    },
+    {
+      scoredFor: '2026-07-12',
+      needScore: 0.9,
+      coverageScore: 0.16,
+      attentionGapScore: 0.74,
+    },
+    {
+      scoredFor: '2026-07-19',
+      needScore: 0.91,
+      coverageScore: 0.14,
+      attentionGapScore: 0.77,
+    },
+  ],
+  observations: [
     {
       source: 'unhcr',
-      label: 'People displaced, cumulative',
+      metric: 'displaced_persons',
       value: 1_247_891,
-      unit: 'people',
-      retrievedAt: '2026-07-19T05:12:00.000Z',
-      url: 'https://api.unhcr.org/population/v1/',
+      observedAt: '2026-07-19',
     },
     {
       source: 'gdelt',
-      label: 'Articles mentioning crisis, last 24h',
-      value: 37,
-      unit: 'articles',
-      retrievedAt: '2026-07-19T05:14:00.000Z',
+      metric: 'coverage_volume_pct',
+      value: 0.42,
+      observedAt: '2026-07-19',
     },
     {
-      source: 'ocha-fts',
-      label: 'Appeal funding received',
-      value: 32,
-      unit: 'percent',
-      retrievedAt: '2026-07-19T05:20:00.000Z',
+      source: 'fts',
+      metric: 'appeal_funded_pct',
+      value: 0.32,
+      observedAt: '2026-07-19',
     },
   ],
 };
 
 /** A crisis with no OCHA appeal on record — funding data genuinely absent. */
 export const noFundingDataInput: BriefInput = {
-  ...sudanInput,
-  crisis: {
-    ...sudanInput.crisis,
-    crisisId: 'mmr-displacement-2026',
-    name: 'Myanmar internal displacement',
-    country: 'Myanmar',
-    countryCode: 'MMR',
-    fundingGapPct: undefined,
+  crisisName: 'Myanmar',
+  country: 'South-eastern Asia',
+  iso3: 'MMR',
+  score: {
+    id: 'score-mmr',
+    crisisId: 'mmr',
+    needScore: 0.83,
+    coverageScore: 0.11,
+    fundingGapPct: null,
+    attentionGapScore: 0.72,
+    algorithmVersion: 'v1',
+    scoredFor: '2026-07-19',
+    computedAt: '2026-07-19T06:00:00.000Z',
   },
-  history: {
-    crisisId: 'mmr-displacement-2026',
-    points: [
-      {
-        computedAt: '2026-07-19T06:00:00.000Z',
-        needScore: 0.83,
-        coverageScore: 0.11,
-        attentionGapScore: 0.72,
-      },
-    ],
-  },
-  sources: [
+  history: [
+    {
+      scoredFor: '2026-07-19',
+      needScore: 0.83,
+      coverageScore: 0.11,
+      attentionGapScore: 0.72,
+    },
+  ],
+  observations: [
     {
       source: 'unhcr',
-      label: 'People displaced, cumulative',
+      metric: 'displaced_persons',
       value: 512_400,
-      unit: 'people',
-      retrievedAt: '2026-07-19T05:12:00.000Z',
+      observedAt: '2026-07-19',
     },
   ],
 };

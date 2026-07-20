@@ -1,0 +1,111 @@
+{
+  "name": "Lumen — OCHA FTS appeal funding",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "45 2 * * *" }]
+        }
+      },
+      "id": "fts-schedule",
+      "name": "Daily 02:45 UTC",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-220, 300],
+      "notes": "Runs last of the four. This workflow sets triggerScoring, so the cohort is scored once on complete data rather than four times on partial data."
+    },
+    {
+      "parameters": {
+        "url": "=https://api.hpc.tools/v2/public/plan?year={{ new Date().getUTCFullYear() }}",
+        "options": { "timeout": 45000 }
+      },
+      "id": "fts-plans",
+      "name": "HPC plans (requirements)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 15000,
+      "notes": "Verified shape: revisedRequirements is TOP-LEVEL on the plan, and this endpoint carries no funding figure at all — funding needs the separate flow call downstream."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verified against the live API on 2026-07-20:\n//   data[].revisedRequirements   (top level, NOT under a `requirements` object)\n//   data[].locations[].iso3      with adminLevel 0 and isRegion false\n// This endpoint carries no funding figure, so each plan needs a second call.\nconst plans = $input.first().json?.data;\nif (!Array.isArray(plans)) {\n  throw new Error('OCHA HPC returned an unexpected shape — no data array present.');\n}\n\nconst items = [];\nfor (const plan of plans) {\n  const requirements = Number(plan?.revisedRequirements ?? plan?.origRequirements);\n  if (!Number.isFinite(requirements) || requirements <= 0) continue;\n\n  // adminLevel 0 and not a region: country rows only, so regional plans do not\n  // double-count their member states.\n  const iso3s = (plan?.locations ?? [])\n    .filter((l) => Number(l?.adminLevel) === 0 && l?.isRegion === false)\n    .map((l) => String(l?.iso3 ?? '').toUpperCase())\n    .filter((c) => c.length === 3);\n\n  if (iso3s.length === 0) continue;\n\n  items.push({ json: { planId: plan.id, requirements, iso3s } });\n}\n\nif (items.length === 0) {\n  throw new Error('OCHA HPC returned no plans with usable requirements and country codes.');\n}\n\nreturn items;"
+      },
+      "id": "fts-build",
+      "name": "Extract plans + countries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.hpc.tools/v1/public/fts/flow?planId={{ $json.planId }}&groupby=plan",
+        "options": {
+          "timeout": 45000,
+          "batching": { "batch": { "batchSize": 3, "batchInterval": 1000 } }
+        }
+      },
+      "id": "fts-funding",
+      "name": "Funding per plan",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 10000,
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true,
+      "notes": "One call per plan (~46/year). onError=continue so a single failing plan degrades that country's funding signal rather than aborting the run — the API treats a null funding gap as 'unknown', not 'fully funded'."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Verified shape: data.report1.fundingTotals.total\nconst observedAt = new Date().toISOString().slice(0, 10);\nconst byCountry = new Map();\nconst failedPlans = [];\n\nconst items = $input.all();\n\nfor (let i = 0; i < items.length; i++) {\n  // Pair each funding response back to the plan that produced it.\n  const plan = $('Extract plans + countries').all()[i]?.json;\n  if (!plan) continue;\n\n  const funding = Number(items[i]?.json?.data?.report1?.fundingTotals?.total);\n\n  for (const iso3 of plan.iso3s) {\n    const acc = byCountry.get(iso3) ?? { requirements: 0, funding: 0, funded: false };\n    // A multi-country plan's requirement is attributed in full to each country\n    // it covers. Splitting it evenly would understate need in the country\n    // actually hosting the response, and the API gives us no basis to weight it.\n    acc.requirements += plan.requirements;\n    if (Number.isFinite(funding)) {\n      acc.funding += funding;\n      acc.funded = true;\n    }\n    byCountry.set(iso3, acc);\n  }\n\n  if (!Number.isFinite(funding)) failedPlans.push(plan.planId);\n}\n\nif (failedPlans.length > 0) {\n  console.warn('FTS: no funding figure for plans ' + failedPlans.join(', '));\n}\n\nif (byCountry.size === 0) {\n  throw new Error('OCHA FTS produced no country-level rows.');\n}\n\nconst observations = [];\nfor (const [iso3, acc] of byCountry) {\n  observations.push({\n    iso3,\n    source: 'fts',\n    metric: 'appeal_requirements_usd',\n    value: acc.requirements,\n    observedAt,\n  });\n\n  // Only emit a funded share when we actually retrieved funding. Emitting 0\n  // for a failed lookup would read as 'completely unfunded' and wrongly\n  // amplify that country's gap.\n  if (acc.funded && acc.requirements > 0) {\n    observations.push({\n      iso3,\n      source: 'fts',\n      metric: 'appeal_funded_pct',\n      // Clamped: appeals can be funded above 100%, which the API reports\n      // faithfully but which fails the API's 0..1 validation.\n      value: Math.min(1, Math.max(0, acc.funding / acc.requirements)),\n      observedAt,\n    });\n  }\n}\n\n// Last workflow of the day — this is what fires scoring.\nreturn [{ json: { source: 'fts', observations, triggerScoring: true } }];"
+      },
+      "id": "fts-parse",
+      "name": "Derive funding gap per country",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.LUMEN_API_BASE_URL }}/webhook/n8n-score-update",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-lumen-webhook-secret", "value": "={{ $env.N8N_WEBHOOK_SECRET }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": { "timeout": 60000 }
+      },
+      "id": "fts-post",
+      "name": "POST to Lumen API (scores)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 300],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "notes": "Longer timeout than the other three: this call also recomputes the whole cohort's scores before responding."
+    }
+  ],
+  "connections": {
+    "Daily 02:45 UTC": { "main": [[{ "node": "HPC plans (requirements)", "type": "main", "index": 0 }]] },
+    "HPC plans (requirements)": { "main": [[{ "node": "Extract plans + countries", "type": "main", "index": 0 }]] },
+    "Extract plans + countries": { "main": [[{ "node": "Funding per plan", "type": "main", "index": 0 }]] },
+    "Funding per plan": { "main": [[{ "node": "Derive funding gap per country", "type": "main", "index": 0 }]] },
+    "Derive funding gap per country": { "main": [[{ "node": "POST to Lumen API (scores)", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all"
+  },
+  "tags": ["lumen", "ingestion"]
+}
