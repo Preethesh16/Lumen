@@ -1,0 +1,66 @@
+{
+  "name": "Lumen — daily ingest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 2 * * *" }]
+        }
+      },
+      "id": "schedule",
+      "name": "Daily 02:00 UTC",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300],
+      "notes": "n8n is only a scheduler here. All fetch-and-parse logic lives in the API's tested ingestion module (apps/api/src/ingest), so it can be unit-tested — n8n Code nodes cannot."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.LUMEN_API_BASE_URL }}/ingest/run",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "x-lumen-webhook-secret", "value": "={{ $env.N8N_WEBHOOK_SECRET }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={}",
+        "options": {
+          "timeout": 600000,
+          "response": { "response": { "neverError": true, "fullResponse": true } }
+        }
+      },
+      "id": "ingest",
+      "name": "Run all sources",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 300],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 30000,
+      "notes": "600s timeout: GDELT paces at one country every 6s (~3 min), and the API scores the whole cohort before responding. neverError so a 207 partial-success (some source down, e.g. ReliefWeb before its appname is approved) is inspected below rather than throwing."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Surface a degraded run so it is visible in the execution log rather than\n// looking identical to a clean one. The API returns 200 for a full run and\n// 207 when at least one source failed.\nconst res = $input.first().json;\nconst status = res.statusCode ?? 200;\nconst body = res.body ?? res;\nconst results = body.results ?? [];\n\nconst failed = results.filter((r) => !r.ok);\nconst summary = results\n  .map((r) => `${r.source}: ${r.ok ? r.observationsWritten + ' obs' : 'FAILED — ' + r.error}`)\n  .join('; ');\n\nif (status === 207 || failed.length > 0) {\n  console.warn('Lumen ingest degraded — ' + summary);\n}\n\nreturn [{ json: { status, degraded: failed.length > 0, summary, results } }];"
+      },
+      "id": "report",
+      "name": "Report result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
+    }
+  ],
+  "connections": {
+    "Daily 02:00 UTC": { "main": [[{ "node": "Run all sources", "type": "main", "index": 0 }]] },
+    "Run all sources": { "main": [[{ "node": "Report result", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all"
+  },
+  "tags": ["lumen", "ingestion"]
+}

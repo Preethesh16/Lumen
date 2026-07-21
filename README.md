@@ -16,11 +16,13 @@ is not proportional to need. Lumen measures that gap and makes it rankable.
 | Component | State |
 |---|---|
 | Postgres schema + migrations | Working, verified against a live database |
-| Scoring engine (`packages/scoring`) | Working, 37 unit tests passing |
+| Scoring engine (`packages/scoring`) | Working, 39 unit tests passing |
 | Backend API (`apps/api`) | Working, verified end-to-end |
+| Ingestion (UNHCR, FTS) | **Working against the live APIs** — real data ranked |
+| Ingestion (GDELT) | Parser tested; live fetch unverified (dev IP throttled) |
+| Ingestion (ReliefWeb) | **Blocked** — needs a registered `appname` (see below) |
 | `infra/docker-compose.yml` | Working, brings up n8n + Postgres |
-| n8n workflows | Written and JSON-valid; **not yet run inside n8n** |
-| ReliefWeb ingestion | **Blocked** — needs a registered `appname` (see below) |
+| n8n workflow | One thin scheduler; JSON-valid; **not yet run inside n8n** |
 | Dashboard, briefs, delivery, deploy | Not started (Deepthi) |
 
 ## Quickstart
@@ -37,6 +39,15 @@ pnpm --filter @lumen/api db:seed
 pnpm dev:api                  # http://localhost:4000
 ```
 
+Ingest real data and see a ranking — no n8n needed:
+
+```bash
+pnpm --filter @lumen/api ingest unhcr   # one source
+pnpm --filter @lumen/api ingest fts     # ~46 funding calls, ~1 min
+pnpm --filter @lumen/api ingest         # all sources, scores at the end
+curl localhost:4000/crises              # ranked list
+```
+
 Verify:
 
 ```bash
@@ -44,9 +55,12 @@ curl localhost:4000/health    # {"status":"ok","database":"connected"}
 curl localhost:4000/crises    # empty until an ingestion run completes
 ```
 
-n8n is at http://localhost:5678 (basic auth, credentials from `.env`).
-Import the four workflows from `n8n/workflows/` via **Workflows → Import from
-File**. They are mounted read-only inside the container at `/workflows`.
+n8n (for scheduled runs) is at http://localhost:5678 (basic auth, credentials
+from `.env`). Import `n8n/workflows/lumen-daily-ingest.json` via **Workflows →
+Import from File**. The workflow is just a daily scheduler that calls
+`POST /ingest/run`; all fetch/parse logic lives in the tested API module, not in
+n8n. For n8n to reach the API on Linux, run the API on the host and keep
+`LUMEN_API_BASE_URL=http://host.docker.internal:4000`.
 
 Run tests:
 

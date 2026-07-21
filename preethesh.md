@@ -85,6 +85,20 @@ Scope: data ingestion, n8n orchestration, scoring, backend API, local infra.
   tracked.
 - Result: implemented, **not yet run on GitHub Actions**
 
+### 2026-07-21 — Ingestion moved into a tested module; real data verified
+
+- Agent: code-logic, then tester
+- Files touched: `apps/api/src/ingest/**`, `apps/api/src/routes/ingest.ts`,
+  slimmed `routes/webhook.ts` (249→68 lines), `n8n/workflows/` (4 fat → 1 thin),
+  `apps/api/test/parsers.test.ts`, fixtures, README, architecture.md
+- Rebuilt ingestion as fetch+parse adapters in the API so the logic is
+  unit-testable, with n8n reduced to a scheduler. Ran it against the live APIs:
+  UNHCR and FTS produced a real 26-crisis ranking (Syria/Sudan/Yemen/Afghanistan
+  on top). GDELT couldn't be verified live — dev IP throttled — so it's
+  fixture-tested only; noted in progress.md and the docs.
+- Result: 79 tests passing. Biggest project risk (no real data ever flowed)
+  retired for 2 of 3 unblocked sources.
+
 ### 2026-07-20 — Scoring v1.1.0 (additive funding term)
 
 - Agent: problem-solver, then code-logic + tester

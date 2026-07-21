@@ -10,42 +10,58 @@ are, and generates briefs for journalists, donors, and NGOs.
 
 ## Data flow
 
+n8n is only a **scheduler**. All fetch-and-parse logic lives in the API's
+tested ingestion module (`apps/api/src/ingest`), not in n8n Code nodes — the
+same principle the plan applied to scoring: business logic that deserves a unit
+test does not live where it cannot be tested.
+
 ```
-                    ┌──────────── n8n (daily, staggered 02:00–02:45 UTC) ────────────┐
-                    │                                                                │
-  GDELT DOC 2.0 ────┤ 01  coverage_volume_pct                                        │
-  ReliefWeb     ────┤ 02  active_disaster_count                                      │
-  UNHCR         ────┤ 03  displaced_persons                                          │
-  OCHA FTS      ────┤ 04  appeal_requirements_usd, appeal_funded_pct  + triggerScoring│
-                    │                                                                │
-                    └────────────────────────────┬───────────────────────────────────┘
-                                                 │ POST /webhook/n8n-score-update
-                                                 │ (x-lumen-webhook-secret)
-                                                 ▼
-                                    ┌────────────────────────┐
-                                    │   apps/api (Express)   │
-                                    │                        │
-                                    │  upsert observations   │
-                                    │  → packages/scoring    │──── pure, unit-tested
-                                    │  → persist scores      │
-                                    └───────────┬────────────┘
-                                                │
-                                    ┌───────────▼────────────┐
-                                    │   Postgres 16          │
-                                    │  crises                │
-                                    │  ingestion_runs        │
-                                    │  source_observations   │◄── raw readings, replayable
-                                    │  crisis_scores         │◄── append-only time series
-                                    │  briefs                │
-                                    └───────────┬────────────┘
-                                                │ GET /crises, /crises/:id
-                                                ▼
-                                    ┌────────────────────────┐
-                                    │  apps/web (Next.js)    │
-                                    │  + Claude brief agent  │
-                                    │  + Telegram / email    │
-                                    └────────────────────────┘
+   ┌─ n8n (daily 02:00 UTC) ─┐
+   │  Daily ingest workflow  │──── POST /ingest/run  (x-lumen-webhook-secret)
+   └─────────────────────────┘        │
+                                       ▼
+                          ┌──────────────────────────────┐
+   GDELT ◄────────────────┤  apps/api (Express)          │
+   ReliefWeb ◄────────────┤   ingest/sources/*  (tested) │──── fetch + parse
+   UNHCR ◄────────────────┤   ingest/run  orchestrator   │
+   OCHA FTS ◄─────────────┤   ingest/persist  (upsert)   │
+                          │   → packages/scoring         │──── pure, unit-tested
+                          └───────────┬──────────────────┘
+                                      │
+   POST /webhook/n8n-score-update ────┤  (alternative entry: a caller that
+   (accepts pre-parsed observations)  │   does its own fetching)
+                                      ▼
+                          ┌────────────────────────┐
+                          │   Postgres 16          │
+                          │  crises                │
+                          │  ingestion_runs        │
+                          │  source_observations   │◄── raw readings, replayable
+                          │  crisis_scores         │◄── append-only time series
+                          │  briefs                │
+                          └───────────┬────────────┘
+                                      │ GET /crises, /crises/:id
+                                      ▼
+                          ┌────────────────────────┐
+                          │  apps/web (Next.js)    │
+                          │  + Claude brief agent  │
+                          │  + Telegram / email    │
+                          └────────────────────────┘
 ```
+
+### Two ingestion entry points
+
+- **`POST /ingest/run`** — the API fetches from the live upstreams itself using
+  the tested adapters, then persists and scores. This is what the n8n workflow
+  and the `pnpm ingest` CLI both call. Optional `{ "source": "unhcr" }` runs one
+  source; an empty body runs all four and scores once at the end.
+- **`POST /webhook/n8n-score-update`** — accepts already-parsed observations
+  from a caller that does its own fetching. Kept as a stable contract; both
+  paths share the same `persistObservations` write logic, so upsert idempotency
+  and run bookkeeping exist in exactly one place.
+
+A source failure never aborts the others: `ingestAll` captures each result, so
+ReliefWeb failing (no appname yet) still yields a full ranking from the other
+three. Verified live — UNHCR and FTS produce a real ranking on their own.
 
 ## Why the schema looks like this
 
@@ -124,7 +140,7 @@ These are recorded deliberately, not overlooked.
 
 | Source | Endpoint | Auth | Verified behaviour |
 |---|---|---|---|
-| GDELT DOC 2.0 | `api.gdeltproject.org/api/v2/doc/doc` | none | Hard limit of **1 request / 5s**. Returns a plain-text warning, not JSON, when exceeded. Workflow paces at 1 per 6s. |
+| GDELT DOC 2.0 | `api.gdeltproject.org/api/v2/doc/doc` | none | Hard limit of **1 request / 5s**. Returns a plain-text warning, not JSON, when exceeded. Adapter paces at 1 per 6s. **Not verified end-to-end** — this dev IP was throttled during testing, so GDELT is the one source proven only at the parse layer (fixture-tested), not against a live fetch. Uses FIPS 2-letter `sourcecountry` codes (mapped in `gdelt.ts`); confirm that mapping on first clean run. |
 | ReliefWeb | `api.reliefweb.int/v2/disasters` | registered `appname` | **Returns 403 for an unregistered appname.** Not merely rate-limited. Must be registered before this workflow can run. |
 | UNHCR | `api.unhcr.org/population/v1/population/` | none | Works. Shape: `items[]` with `coa_iso`, `year`, and per-category counts, some as strings. |
 | OCHA FTS | `api.hpc.tools/v2/public/plan` | none | Works, but carries **no funding figure** — `revisedRequirements` is top-level, and funding requires a second call to `/v1/public/fts/flow?planId=…&groupby=plan`. |
@@ -136,7 +152,11 @@ These are recorded deliberately, not overlooked.
 | `GET` | `/health` | Liveness + a real Postgres round-trip |
 | `GET` | `/crises?limit=` | Ranked list for the latest scored day, with `rankDelta` |
 | `GET` | `/crises/:id` | Detail by UUID or ISO3: score history, latest observations, briefs |
-| `POST` | `/webhook/n8n-score-update` | Ingestion from n8n; shared-secret auth, idempotent upserts |
+| `POST` | `/ingest/run` | Server-side fetch+parse+persist; shared-secret; `{source?}` |
+| `POST` | `/webhook/n8n-score-update` | Ingest pre-parsed observations; shared-secret, idempotent |
+
+Ingestion can also be run from a terminal without n8n:
+`pnpm --filter @lumen/api ingest [source]`.
 
 `GET /crises` serves the most recent *scored* day rather than today, so a run
 that hasn't fired yet shows yesterday's ranking instead of an empty list.

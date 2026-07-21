@@ -169,3 +169,67 @@ the pure multiplicative model for anyone who disagrees.
 
 **Next up:** unchanged from Session 1 — ReliefWeb appname, run the workflows
 inside n8n, agree shared-types with Deepthi.
+
+---
+
+## Session 3 — 2026-07-21 — Preethesh
+
+**Goal:** Retire the biggest project risk — that no real data had ever flowed
+through the system — without needing the n8n UI or any manual step.
+
+**Agents used:** code-logic, tester
+
+**What changed — ingestion moved out of n8n into a tested TS module:**
+
+The four n8n workflows held their fetch-and-parse logic inside Code nodes,
+which cannot be unit-tested — the exact anti-pattern the plan called out for
+scoring. Rebuilt ingestion as `apps/api/src/ingest`:
+
+- `http.ts` — one fetch client with timeout + exponential backoff, retrying
+  429/5xx/timeouts and treating a non-JSON 200 as a GDELT soft-throttle.
+- `sources/{gdelt,unhcr,fts,reliefweb}.ts` — each splits a **pure `parse`**
+  (fixture-tested) from the I/O `fetch`.
+- `persist.ts` — extracted the upsert + run-bookkeeping + scoring from the
+  webhook handler, now shared by both the webhook and the runner. The webhook
+  route dropped from 249 to 68 lines.
+- `run.ts` — orchestrates; a source failure is captured, never thrown, so one
+  dead upstream cannot abort a multi-source run.
+- `routes/ingest.ts` — `POST /ingest/run` (secret-protected), and a
+  `pnpm ingest` CLI.
+
+The four fat workflows collapsed into one thin `lumen-daily-ingest.json` that
+just POSTs `/ingest/run`. No parse logic in two places, so no drift for the
+verifier to catch.
+
+**Decision — UNHCR groups by country of origin, not asylum.** The original n8n
+code aggregated by country of asylum (who hosts refugees). For ranking crisis
+severity, country of origin (who is displaced *by* a crisis) is the right
+signal. Changed the query to `coo_all=true` and aggregate on `coo_iso`.
+
+**Verified against the LIVE APIs — first real data through the system:**
+
+- **UNHCR:** 26/26 crises ingested. Sudan 12.9M displaced, Syria 10.6M, Ukraine
+  9.7M — real, plausible figures.
+- **OCHA FTS:** two-stage fan-out (plans + per-plan funding) works end-to-end.
+  Afghanistan $1.7B appeal at 20.5% funded, DRC $1.4B at 55%.
+- **Real ranking (UNHCR + FTS only):** Syria, Sudan, Yemen, Afghanistan on top —
+  all genuinely severe and underfunded. Coverage sat at neutral 0.5 for all,
+  which is the **graceful-degradation path working**: with GDELT absent the
+  system still produces a need+funding ranking rather than failing.
+
+**Known gap — GDELT not verified live.** This dev IP was throttled throughout
+(GDELT enforces 1 req/5s and had already flagged my earlier probes), so 26
+paced calls exceeded the run window. GDELT is proven only at the parse layer
+(fixture-tested). Its `sourcecountry` FIPS-code mapping in `gdelt.ts` also needs
+confirming on a first clean run. Recorded honestly rather than claimed done.
+
+**Tests:** 79 passing (39 scoring, 40 API incl. 16 new parser tests), 0 failing.
+Lint clean, all packages typecheck.
+
+**Next up:**
+
+- Confirm GDELT live from an un-throttled IP; verify the FIPS mapping.
+- ReliefWeb appname (still blocked).
+- Run the one workflow inside n8n once (the only remaining untested surface is
+  n8n → API reachability on Linux).
+- Agree shared-types with Deepthi.

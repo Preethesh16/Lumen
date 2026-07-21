@@ -2,6 +2,7 @@ import express, { type Express } from 'express';
 import { sql } from './db/client.js';
 import { errorHandler } from './lib/errors.js';
 import { crisesRouter } from './routes/crises.js';
+import { ingestRouter } from './routes/ingest.js';
 import { webhookRouter } from './routes/webhook.js';
 
 export function createApp(): Express {
@@ -26,6 +27,7 @@ export function createApp(): Express {
 
   app.use('/crises', crisesRouter);
   app.use('/webhook', webhookRouter);
+  app.use('/ingest', ingestRouter);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'not_found', message: 'Route not found' } });
