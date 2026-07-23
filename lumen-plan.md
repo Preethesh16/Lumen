@@ -10,7 +10,7 @@
 | Orchestration engine | **n8n**, self-hosted via Docker | Required by the course brief; also genuinely the right tool — visual workflow + schedule triggers + HTTP nodes + native AI Agent nodes |
 | Backend API | **Node.js + Express (TypeScript)** | Thin layer between n8n (webhooks) and the frontend/DB. TS gives shared types with a Next.js frontend, which matters more than it sounds for a 2-person team |
 | Database | **PostgreSQL** (via Supabase or Neon free tier) | Structured time-series data (crisis scores over time) — relational, not document — Postgres is the right call, not Mongo |
-| LLM | **Claude API (Anthropic)** for the Content-Generation Agent's brief writing | You're already Claude-native; also strongest at grounded, non-hallucinated summarization from structured input |
+| LLM | **Groq API** for optional brief narrative; deterministic grounded fallback | Fast runtime generation without making scoring or outreach depend on an LLM |
 | Frontend | **Next.js 15 (App Router) + Tailwind + shadcn/ui** | Fast to build a dashboard, deploys trivially to Vercel, TS shared with backend |
 | Data sources | GDELT DOC 2.0, ReliefWeb API, UNHCR API, OCHA FTS API — all free, no keys except registration-only ones | Confirmed free during the research phase |
 | Notifications | Telegram Bot API (fastest to stand up) + Resend/SendGrid for email | Telegram needs zero business verification, ships same day |
@@ -163,20 +163,20 @@ without new information.
 **`phase.md`** — milestone tracker:
 ```markdown
 ## Phase 1 — Foundation (Week 1)
-- [ ] Repo scaffolding + Docker compose (n8n + Postgres)
-- [ ] Data ingestion: GDELT + ReliefWeb + UNHCR HTTP nodes
-- [ ] DB schema for crisis_scores table
+- [x] Repo scaffolding + Docker compose (n8n + Postgres)
+- [x] Data ingestion: GDELT + ReliefWeb + UNHCR HTTP nodes
+- [x] DB schema for crisis_scores table
 ## Phase 2 — Core Agent Logic (Week 2)
-- [ ] Scoring node (need vs. coverage → gap score)
-- [ ] Content-generation agent (Claude API) for briefs
-- [ ] API endpoints to serve ranked crises
+- [x] Scoring node (need vs. coverage → gap score)
+- [x] Content-generation agent (Groq API + grounded fallback) for briefs
+- [x] API endpoints to serve ranked crises
 ## Phase 3 — Delivery + Frontend (Week 3)
-- [ ] Telegram/email outreach agent
-- [ ] Next.js dashboard
-- [ ] CI/CD + deployment
+- [x] Telegram/email outreach agent
+- [x] Next.js dashboard
+- [x] CI/CD + deployment artifacts
 ## Phase 4 — Hardening (Week 4)
-- [ ] Error handling, rate-limit backoff
-- [ ] Tests + verify pass
+- [x] Error handling, rate-limit backoff
+- [x] Tests + verify pass
 - [ ] Final deploy + demo recording
 ```
 
@@ -200,7 +200,7 @@ without new information.
 - Docker Compose local infra
 
 **Deepthi — Delivery & Experience Owner**
-- Claude API integration for the Content-Generation Agent (brief writing)
+- Groq API integration for the Content-Generation Agent (brief writing)
 - Telegram bot + email delivery (Outreach agent)
 - Next.js dashboard (`apps/web`)
 - CI/CD pipeline + deployment (Railway + Vercel)
@@ -356,7 +356,7 @@ MY SCOPE OF WORK (do not touch apps/api or n8n/workflows — that's
 Preethesh's):
 - Content-Generation agent: a service (can live as a small module I own,
   called either from n8n or from apps/web's server actions) that calls
-  the Claude API to turn a ranked crisis + its raw data into THREE
+  the Groq API to turn a ranked crisis + its raw data into THREE
   audience-tailored outputs: a journalist pitch, a donor one-pager, and
   an NGO fundraising angle. Ground every generation strictly in the
   structured data passed in — never let the model invent statistics.
@@ -385,7 +385,7 @@ Preethesh's):
   Brief interfaces before building UI against them — don't invent a
   parallel shape.
 
-Use real error handling (Claude API rate limits/timeouts, Telegram send
+Use real error handling (Groq API rate limits/timeouts, Telegram send
 failures, empty crisis lists on first run). No hardcoded secrets — use
 .env locally and document required vars in README.md.
 

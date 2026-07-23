@@ -1,0 +1,56 @@
+name: Build production images
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - service: api
+            dockerfile: infra/Dockerfile.api
+          - service: web
+            dockerfile: infra/Dockerfile.web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/lumen-${{ matrix.service }}:latest
+            ghcr.io/${{ github.repository_owner }}/lumen-${{ matrix.service }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-hook:
+    needs: images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger configured production deployment
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK_URL" ]; then
+            echo "No DEPLOY_HOOK_URL configured; production images are ready in GHCR."
+            exit 0
+          fi
+          curl --fail --silent --show-error --request POST "$DEPLOY_HOOK_URL"

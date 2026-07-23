@@ -315,6 +315,89 @@ describe('GET /crises/:id', () => {
   });
 });
 
+describe('brief generation and delivery', () => {
+  async function createScore() {
+    await post({
+      source: 'unhcr',
+      triggerScoring: true,
+      observations: [obs('SDN', 'displaced_persons', 12_900_000)],
+    });
+  }
+
+  async function briefRequest(
+    path: string,
+    body: unknown,
+    secret: string | null = SECRET,
+  ) {
+    const headers: Record<string, string> = { 'content-type': 'application/json' };
+    if (secret !== null) headers['x-lumen-admin-secret'] = secret;
+    const response = await fetch(`${baseUrl}${path}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+    });
+    return { status: response.status, json: await response.json() };
+  }
+
+  it('protects brief write routes with the admin secret', async () => {
+    const response = await briefRequest(
+      '/briefs/generate',
+      { crisisId: 'SDN', forceTemplate: true },
+      null,
+    );
+    expect(response.status).toBe(401);
+  });
+
+  it('generates a grounded template linked to the exact score row', async () => {
+    await createScore();
+    const response = await briefRequest('/briefs/generate', {
+      crisisId: 'SDN',
+      audience: 'journalist',
+      forceTemplate: true,
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.json.usedFallback).toBe(true);
+    expect(response.json.data.model).toBe('lumen-template-v1');
+    expect(response.json.data.scoreId).not.toBeNull();
+    expect(response.json.data.content).toContain('Sudan (SDN)');
+    expect(response.json.data.content).toContain('12.9M displaced people');
+
+    const detail = await (await fetch(`${baseUrl}/crises/SDN`)).json();
+    expect(detail.data.briefs).toHaveLength(1);
+    expect(detail.data.briefs[0].scoreId).toBe(response.json.data.scoreId);
+  });
+
+  it('reports unconfigured delivery channels as skipped instead of crashing', async () => {
+    await createScore();
+    const generated = await briefRequest('/briefs/generate', {
+      crisisId: 'SDN',
+      forceTemplate: true,
+    });
+    const delivered = await briefRequest(`/briefs/${generated.json.data.id}/deliver`, {
+      channels: ['telegram', 'email'],
+    });
+
+    expect(delivered.status).toBe(200);
+    expect(delivered.json.data.map((item: { status: string }) => item.status)).toEqual([
+      'skipped',
+      'skipped',
+    ]);
+  });
+
+  it('runs brief generation for the highest-ranked crisis', async () => {
+    await createScore();
+    const response = await briefRequest('/briefs/run', {
+      limit: 1,
+      forceTemplate: true,
+      channels: [],
+    });
+    expect(response.status).toBe(201);
+    expect(response.json.data).toHaveLength(1);
+    expect(response.json.data[0].iso3).toBe('SDN');
+  });
+});
+
 describe('unknown routes', () => {
   it('404s with a structured error body', async () => {
     const res = await fetch(`${baseUrl}/nope`);

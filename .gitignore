@@ -19,6 +19,7 @@ infra/.n8n/
 # Editor / OS
 .DS_Store
 *.log
+*.tsbuildinfo
 .idea/
 .vscode/*
 !.vscode/extensions.json

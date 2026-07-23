@@ -19,7 +19,9 @@
     "infra:logs": "docker compose --env-file .env -f infra/docker-compose.yml logs -f",
     "db:generate": "pnpm --filter @lumen/api db:generate",
     "db:migrate": "pnpm --filter @lumen/api db:migrate",
-    "dev:api": "pnpm --filter @lumen/api dev"
+    "dev:api": "pnpm --filter @lumen/api dev",
+    "dev:web": "pnpm --filter @lumen/web dev",
+    "dev": "pnpm --parallel --filter @lumen/api --filter @lumen/web dev"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["esbuild"]

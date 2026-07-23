@@ -43,7 +43,7 @@ test does not live where it cannot be tested.
                                       ▼
                           ┌────────────────────────┐
                           │  apps/web (Next.js)    │
-                          │  + Claude brief agent  │
+                          │  + Groq brief agent    │
                           │  + Telegram / email    │
                           └────────────────────────┘
 ```
@@ -154,6 +154,9 @@ These are recorded deliberately, not overlooked.
 | `GET` | `/crises/:id` | Detail by UUID or ISO3: score history, latest observations, briefs |
 | `POST` | `/ingest/run` | Server-side fetch+parse+persist; shared-secret; `{source?}` |
 | `POST` | `/webhook/n8n-score-update` | Ingest pre-parsed observations; shared-secret, idempotent |
+| `POST` | `/briefs/generate` | Generate and store one grounded brief; admin-secret |
+| `POST` | `/briefs/:id/deliver` | Deliver a stored brief through Telegram/email; admin-secret |
+| `POST` | `/briefs/run` | Generate/deliver briefs for the top-ranked crises; admin-secret |
 
 Ingestion can also be run from a terminal without n8n:
 `pnpm --filter @lumen/api ingest [source]`.
@@ -162,6 +165,20 @@ Ingestion can also be run from a terminal without n8n:
 that hasn't fired yet shows yesterday's ranking instead of an empty list.
 Cold start returns `{ data: [], scoredFor: null, count: 0 }` — an empty state,
 not an error.
+
+## Grounded brief generation
+
+Codex is a development tool, not a runtime embedded in the deployed
+application. Runtime prose therefore uses Groq when `GROQ_API_KEY` is
+configured, with no Groq SDK dependency: the API calls the OpenAI-compatible
+HTTP endpoint directly.
+
+Numeric grounding is enforced structurally. The API renders the fact paragraph
+itself from the exact `crisis_scores` row and latest `source_observations`.
+Groq receives only qualitative facts and may write one number-free narrative
+paragraph. Any digit in model output fails validation and activates the
+deterministic audience-specific fallback. Thus a provider outage, missing key,
+rate limit, or hallucinated quantity cannot remove or corrupt a brief.
 
 ## Ownership
 

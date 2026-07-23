@@ -233,3 +233,39 @@ Lint clean, all packages typecheck.
 - Run the one workflow inside n8n once (the only remaining untested surface is
   n8n → API reachability on Linux).
 - Agree shared-types with Deepthi.
+
+---
+
+## Session 4 — 2026-07-24 — Delivery, dashboard, and production completion
+
+**Goal:** Complete the previously unimplemented delivery/experience scope and
+replace the planned Claude runtime dependency with Groq.
+
+**Changes made:**
+
+- Added secret-protected brief generation and batch-run APIs. Every numeric fact
+  is assembled from the exact `crisis_scores` row and latest stored
+  observations. Groq can add only number-free narrative; digit-containing,
+  empty, timed-out, or failed output falls back to a deterministic brief.
+- Added Telegram Bot API and Resend email delivery with per-channel
+  sent/skipped/failed results.
+- Built the complete responsive Next.js dashboard: ranked/searchable/sortable
+  crisis index, detail pages, need-vs-coverage chart, source evidence, brief
+  generation, copy and delivery controls, and loading/empty/error states.
+- Extended the daily n8n workflow from ingest through generation and outreach.
+- Added production Dockerfiles and a full-stack Compose deployment.
+- Extended CI with production dashboard builds and credential-pattern checks;
+  added `main` branch API/web image publishing to GitHub Container Registry and
+  an optional host deployment hook.
+- Added MIT license and updated the README, architecture, phase tracker, and
+  Deepthi log to match the implemented system.
+
+**Verification:** lint clean; every package typechecks; 83 tests pass (39
+scoring + 44 API/parser); the Next.js production build succeeds. Live UNHCR
+and OCHA FTS ingestion populated the 26-country cohort. The list and detail
+pages were inspected in a headless browser, and the complete
+browser → Next server → API → database brief path passed.
+
+**External steps remaining:** rotate the Groq key exposed in chat; configure
+fresh provider credentials; import/activate n8n; approve ReliefWeb appname;
+choose a production host/domain; perform a live delivery; record the demo.

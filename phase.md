@@ -25,8 +25,8 @@ duplicates on re-run, and `GET /crises` returns a ranking. ✅ met for UNHCR+FTS
 ## Phase 2 — Core Agent Logic (Week 2)
 
 - [x] Scoring function: pure, unit-tested, outside n8n
-- [ ] API endpoints serving ranked crises
-- [ ] Content-generation agent (Claude API) for briefs — *Deepthi*
+- [x] API endpoints serving ranked crises
+- [x] Content-generation agent (Groq API + grounded fallback) for briefs
 
 **Acceptance:** `GET /crises` returns crises ranked by `attention_gap_score`
 descending with a non-null `rankDelta` once two runs exist. Scoring has tests
@@ -36,9 +36,9 @@ appears in a brief that is not in the database.
 
 ## Phase 3 — Delivery + Frontend (Week 3)
 
-- [ ] Telegram + email outreach agent — *Deepthi*
-- [ ] Next.js dashboard — *Deepthi*
-- [ ] CI/CD + deployment — *Deepthi*
+- [x] Telegram + email outreach agent
+- [x] Next.js dashboard
+- [x] CI verification + production image/deployment configuration
 
 **Acceptance:** A scheduled run produces a brief that lands in Telegram. The
 dashboard renders the ranked list, a detail view with the need-vs-coverage
@@ -46,11 +46,14 @@ trend, and briefs with copy-to-clipboard. Deployed and reachable at a URL.
 
 ## Phase 4 — Hardening (Week 4)
 
-- [ ] Retry/backoff on every upstream call; partial data degrades gracefully
-- [ ] Empty states and API-failure states in the dashboard
-- [ ] Full test suite green; `verifier` PASS
-- [ ] Final deploy + demo recording + README walkthrough
+- [x] Retry/backoff on every upstream call; partial data degrades gracefully
+- [x] Empty states and API-failure states in the dashboard
+- [x] Full local test/typecheck/build suite green
+- [ ] Final production URL + live Telegram/email check + demo recording
 
 **Acceptance:** Killing the API mid-session leaves the dashboard showing an
 error state, not a blank page. A cold start with an empty database renders
 sensible empty states everywhere. No secret appears anywhere in git history.
+The final unchecked item requires the owners' external hosting, Telegram,
+email, and recording accounts; implementation and deployment artifacts are in
+the repository.

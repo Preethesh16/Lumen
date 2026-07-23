@@ -61,6 +61,9 @@ jobs:
       - name: Test
         run: pnpm -r test
 
+      - name: Build production dashboard
+        run: pnpm --filter @lumen/web build
+
       - name: Verify migrations apply to a clean database
         # Catches schema drift: a schema change with no generated migration
         # passes typecheck but breaks every real deploy.
@@ -80,6 +83,10 @@ jobs:
         run: |
           if git ls-files | grep -E '^\.env$'; then
             echo "ERROR: .env is tracked by git"
+            exit 1
+          fi
+          if git grep -nE '(gsk_[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9_-]{20,})' -- ':!pnpm-lock.yaml'; then
+            echo "ERROR: a credential-like value is tracked by git"
             exit 1
           fi
           echo "ok: no .env tracked"

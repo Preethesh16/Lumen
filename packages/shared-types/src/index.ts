@@ -127,6 +127,37 @@ export interface Brief {
   generatedAt: IsoDateTime;
 }
 
+export type DeliveryChannel = 'telegram' | 'email';
+export type DeliveryStatus = 'sent' | 'skipped' | 'failed';
+
+export interface DeliveryResult {
+  channel: DeliveryChannel;
+  status: DeliveryStatus;
+  message: string;
+}
+
+export interface GenerateBriefResponse {
+  data: Brief;
+  usedFallback: boolean;
+  warning: string | null;
+}
+
+export interface DeliverBriefResponse {
+  data: DeliveryResult[];
+}
+
+export interface BriefRunResult {
+  crisisId: string;
+  iso3: Iso3;
+  brief: Brief;
+  usedFallback: boolean;
+  delivery: DeliveryResult[];
+}
+
+export interface RunBriefsResponse {
+  data: BriefRunResult[];
+}
+
 // ---------------------------------------------------------------------------
 // API responses
 // ---------------------------------------------------------------------------

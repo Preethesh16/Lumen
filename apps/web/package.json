@@ -1,0 +1,24 @@
+{
+  "name": "@lumen/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node --env-file-if-exists=../../.env ./node_modules/next/dist/bin/next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"web verified by typecheck and production build\""
+  },
+  "dependencies": {
+    "@lumen/shared-types": "workspace:*",
+    "next": "^15.5.7",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.1",
+    "@types/react": "^19.1.16",
+    "@types/react-dom": "^19.1.9",
+    "typescript": "^5.9.3"
+  }
+}

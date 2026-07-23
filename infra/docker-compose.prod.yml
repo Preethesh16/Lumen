@@ -1,0 +1,92 @@
+name: lumen-production
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lumen}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_DB: ${POSTGRES_DB:-lumen}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lumen} -d ${POSTGRES_DB:-lumen}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  api:
+    image: ${LUMEN_API_IMAGE:-lumen-api:local}
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      API_PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lumen}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-lumen}
+      N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET:?N8N_WEBHOOK_SECRET is required}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-llama-3.3-70b-versatile}
+      RELIEFWEB_APPNAME: ${RELIEFWEB_APPNAME:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-Lumen <briefs@example.com>}
+      DELIVERY_EMAIL_TO: ${DELIVERY_EMAIL_TO:-}
+    ports:
+      - "${API_PORT:-4000}:4000"
+
+  web:
+    image: ${LUMEN_WEB_IMAGE:-lumen-web:local}
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      API_BASE_URL: http://api:4000
+      LUMEN_ADMIN_SECRET: ${N8N_WEBHOOK_SECRET:?N8N_WEBHOOK_SECRET is required}
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB:-lumen}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER:-lumen}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      DB_POSTGRESDB_SCHEMA: n8n
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY is required}
+      N8N_PORT: 5678
+      N8N_HOST: ${N8N_HOST:-localhost}
+      WEBHOOK_URL: ${N8N_PUBLIC_URL:-http://localhost:5678/}
+      GENERIC_TIMEZONE: Etc/UTC
+      TZ: Etc/UTC
+      LUMEN_API_BASE_URL: http://api:4000
+      N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET:?N8N_WEBHOOK_SECRET is required}
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./../n8n/workflows:/workflows:ro
+
+volumes:
+  postgres_data:
+  n8n_data:

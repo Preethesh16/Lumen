@@ -10,6 +10,11 @@ config({ path: '../../.env' });
  * variable into a confusing 500 hours later instead of a clear failure at
  * startup.
  */
+const optionalString = z.preprocess(
+  (value) => (value === '' ? undefined : value),
+  z.string().min(1).optional(),
+);
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   API_PORT: z.coerce.number().int().positive().default(4000),
@@ -17,6 +22,16 @@ const envSchema = z.object({
   N8N_WEBHOOK_SECRET: z
     .string()
     .min(16, 'N8N_WEBHOOK_SECRET must be at least 16 characters'),
+  GROQ_API_KEY: optionalString,
+  GROQ_MODEL: z.string().min(1).default('llama-3.3-70b-versatile'),
+  TELEGRAM_BOT_TOKEN: optionalString,
+  TELEGRAM_CHAT_ID: optionalString,
+  RESEND_API_KEY: optionalString,
+  RESEND_FROM_EMAIL: z.string().min(1).default('Lumen <briefs@example.com>'),
+  DELIVERY_EMAIL_TO: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.string().email().optional(),
+  ),
 });
 
 const parsed = envSchema.safeParse(process.env);
