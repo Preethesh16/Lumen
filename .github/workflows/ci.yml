@@ -36,13 +36,13 @@ jobs:
       NODE_ENV: test
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10.34.5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: pnpm
@@ -58,16 +58,16 @@ jobs:
       - name: Typecheck
         run: pnpm -r typecheck
 
+      - name: Verify migrations apply to a clean database
+        # Tests query real tables, so the clean CI service must be migrated
+        # first. This also catches schema changes with no migration.
+        run: pnpm --filter @lumen/api db:migrate
+
       - name: Test
         run: pnpm -r test
 
       - name: Build production dashboard
         run: pnpm --filter @lumen/web build
-
-      - name: Verify migrations apply to a clean database
-        # Catches schema drift: a schema change with no generated migration
-        # passes typecheck but breaks every real deploy.
-        run: pnpm --filter @lumen/api db:migrate
 
       - name: Verify n8n workflow JSON is parseable
         # These are committed exports; a malformed one fails at import time in

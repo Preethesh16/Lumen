@@ -265,6 +265,9 @@ scoring + 44 API/parser); the Next.js production build succeeds. Live UNHCR
 and OCHA FTS ingestion populated the 26-country cohort. The list and detail
 pages were inspected in a headless browser, and the complete
 browser → Next server → API → database brief path passed.
+The first remote CI run exposed a workflow-ordering bug (tests ran before the
+clean Postgres service was migrated); migration now runs before tests, and the
+deprecated GitHub action runtimes were upgraded.
 
 **External steps remaining:** rotate the Groq key exposed in chat; configure
 fresh provider credentials; import/activate n8n; approve ReliefWeb appname;
