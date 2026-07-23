@@ -30,14 +30,19 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
+      - name: Normalize image namespace
+        id: image
+        shell: bash
+        run: echo "prefix=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/lumen" >> "$GITHUB_OUTPUT"
+
       - uses: docker/build-push-action@v6
         with:
           context: .
           file: ${{ matrix.dockerfile }}
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/lumen-${{ matrix.service }}:latest
-            ghcr.io/${{ github.repository_owner }}/lumen-${{ matrix.service }}:${{ github.sha }}
+            ${{ steps.image.outputs.prefix }}-${{ matrix.service }}:latest
+            ${{ steps.image.outputs.prefix }}-${{ matrix.service }}:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
