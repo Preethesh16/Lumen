@@ -1,6 +1,6 @@
 # Deepthi — Work Log
 
-Scope: content-generation agent (Groq API), outreach/delivery (Telegram +
+Scope: content-generation agent (Claude API), outreach/delivery (Telegram +
 email), Next.js dashboard, CI/CD and deployment, README and architecture docs.
 
 ---
@@ -30,20 +30,98 @@ email), Next.js dashboard, CI/CD and deployment, README and architecture docs.
    in and store that link — `verifier` treats any statistic in a brief that
    isn't traceable to a stored row as a FAIL, not a nitpick.
 
-### 2026-07-24 — Delivery and experience scope completed
+Owner of: content-generation agent, outreach/delivery, `apps/web`, CI/CD, docs.
 
-- Replaced the planned Claude runtime with optional Groq
-  (`llama-3.3-70b-versatile`) and a deterministic fallback.
-- Added a grounding guard: every numeric fact is rendered from the stored score
-  and observations; model-written narrative is rejected if it contains digits.
-- Added secret-protected brief generation, batch generation, Telegram delivery,
-  and Resend email delivery routes with graceful unconfigured states.
-- Built the responsive Next.js dashboard: ranking/search/sort, crisis detail,
-  need-vs-coverage trend, source evidence, brief generation/copy/delivery,
-  loading, empty, not-found, and API-failure states.
-- Extended the daily n8n workflow through brief generation and delivery.
-- Added production Dockerfiles, full-stack Compose, CI production web build,
-  secret-pattern checks, and GitHub Container Registry image publishing.
-- Shared types approved and extended for brief and delivery responses.
-- Result: implementation complete. External credentials, workflow activation,
-  production hosting, and demo recording remain owner-operated steps.
+---
+
+### 2026-07-20 — Session 1 — project kickoff
+
+**Prompt:** set up my side of Lumen from `lumen-plan.md`.
+
+- Agent: code-logic
+- Files touched: `.claude/agents/*.md`, `progress.md`, `phase.md`,
+  `deepthi.md`, `preethesh.md`, `packages/shared-types/*`
+- Result: branch `deepthi/dev` created; shared scaffold and subagent
+  definitions in place.
+
+---
+
+### 2026-07-20 — Session 2 — content agent, delivery, dashboard, CI
+
+**Prompt:** build out my scope from the plan.
+
+- Agent: code-logic, tester
+- Files touched: `apps/web/src/lib/content-agent/**`,
+  `apps/web/src/lib/delivery/**`, `apps/web/src/lib/api/**`,
+  `apps/web/src/app/**`, `apps/web/src/components/**`,
+  `.github/workflows/ci.yml`, `README.md`, `docs/architecture.md`,
+  `.env.example`
+- Result: 22 tests passing, `next build` clean, all routes verified against
+  a running server.
+
+**Two bugs the tests caught**, both logged in progress.md: the grounding
+validator was flagging time expressions ("24 hours") as invented statistics,
+and `.js` import extensions passed under vitest but broke `next build` —
+tests green while the build was broken.
+
+**Note to self:** the mock API fallback is labelled in the UI on purpose.
+Do not quietly remove the banner when the real API lands — the empty-database
+window after each daily n8n run is real, and unlabelled placeholder figures
+about a humanitarian crisis are the one thing this project cannot ship.
+
+---
+
+### 2026-07-20 — Session 1 — project kickoff
+
+**Note to self:** the repo was empty when I started — Preethesh's `apps/api`,
+`n8n/workflows`, and Docker compose do not exist yet. I authored
+`packages/shared-types` myself to unblock. Get his sign-off on it before
+building the dashboard against those shapes, or we will diverge exactly the
+way section 9 of the plan warns about.
+
+---
+
+### 2026-07-20 — Session 4 — delivery routes, mock-data rewrite
+
+**Prompt:** pull main, then continue my part of the work.
+
+- Agent: code-logic, tester
+- Files touched: `apps/web/src/app/api/deliver/**`,
+  `apps/web/src/lib/delivery/auth.ts`, `apps/web/src/lib/api/mock-data.ts`,
+  `apps/web/src/lib/__tests__/format.test.ts`,
+  `apps/web/src/lib/delivery/__tests__/auth.test.ts`, `README.md`,
+  `.env.example`
+- Result: 48 tests passing, build clean, auth boundary verified live.
+
+**The thing worth remembering:** the placeholder scores were wrong and nobody
+would have noticed. `mock-data.ts` reimplemented the scoring formula by hand,
+so it drifted the moment the real one changed — and it had never actually
+matched. Anyone reviewing the dashboard without the API up was looking at a
+ranking the system would never produce.
+
+The fix was not to correct the numbers but to delete the duplicate: the mock
+now feeds raw observations through the real `scoreCohort`. Do not reintroduce
+a hand-copied formula anywhere in `apps/web`. If a value can be derived from
+`@lumen/scoring`, derive it.
+
+---
+
+### 2026-07-24 — Final architecture reconciliation
+
+Deepthi's dashboard, grounding, and delivery work was reconciled with the
+completed backend implementation during the `preethesh/dev` → `main` merge.
+The production tree now has one Next.js dashboard and one delivery path:
+
+- the dashboard reads the real Express API and shows an explicit unavailable
+  state instead of silently displaying placeholder crisis figures;
+- grounded briefs are generated and persisted by `apps/api`, using optional
+  Groq narration with a deterministic fallback;
+- Telegram and Resend delivery run through the API and the imported n8n
+  workflow; both were tested against live accounts;
+- the earlier `apps/web/src` Claude/content-agent and duplicate delivery-route
+  implementation remains preserved in Git history, but is not part of the
+  final runtime, avoiding two competing implementations and Anthropic keys.
+
+Deepthi's original design and testing notes above remain useful historical
+context; current operating instructions live in `README.md` and
+`docs/architecture.md`.
