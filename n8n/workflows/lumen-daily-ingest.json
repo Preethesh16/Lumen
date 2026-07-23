@@ -1,5 +1,7 @@
 {
+  "id": "lumenDailyIngest",
   "name": "Lumen — daily ingest",
+  "active": false,
   "nodes": [
     {
       "parameters": {
@@ -90,6 +92,5 @@
     "executionOrder": "v1",
     "saveManualExecutions": true,
     "saveDataErrorExecution": "all"
-  },
-  "tags": ["lumen", "ingestion"]
+  }
 }

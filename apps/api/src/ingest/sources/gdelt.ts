@@ -15,6 +15,7 @@ const GDELT_COUNTRY: Record<string, string> = {
 };
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const MAX_CONSECUTIVE_FAILURES = 3;
 
 /**
  * Parse a GDELT timelinevol response into a single coverage value.
@@ -41,6 +42,7 @@ export const gdeltAdapter: SourceAdapter = {
   async fetch({ observedAt, iso3s }): Promise<ParseResult> {
     const observations: ObservationInput[] = [];
     const warnings: string[] = [];
+    let consecutiveFailures = 0;
 
     for (let i = 0; i < iso3s.length; i++) {
       const iso3 = iso3s[i]!.toUpperCase();
@@ -57,10 +59,13 @@ export const gdeltAdapter: SourceAdapter = {
           `https://api.gdeltproject.org/api/v2/doc/doc` +
           `?query=sourcecountry:${code}&mode=timelinevol&timespan=1d&format=json`;
         const body = await fetchJson<GdeltTimeline>(url, {
-          timeoutMs: 30_000,
-          backoffMs: 10_000,
-          maxRetries: 2,
+          // Bound an unavailable GDELT run so the scheduler can still score
+          // and deliver a brief from UNHCR/FTS data within its HTTP timeout.
+          timeoutMs: 12_000,
+          backoffMs: 6_000,
+          maxRetries: 1,
         });
+        consecutiveFailures = 0;
         const value = parseGdeltTimeline(body);
         if (value === null) {
           warnings.push(`GDELT: no usable series for ${iso3}`);
@@ -74,9 +79,18 @@ export const gdeltAdapter: SourceAdapter = {
           observedAt,
         });
       } catch (error) {
+        consecutiveFailures++;
         warnings.push(
           `GDELT: fetch failed for ${iso3} — ${error instanceof Error ? error.message : error}`,
         );
+        if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+          const remaining = iso3s.length - i - 1;
+          warnings.push(
+            `GDELT: stopped after ${MAX_CONSECUTIVE_FAILURES} consecutive failures; ` +
+              `${remaining} remaining countries skipped`,
+          );
+          break;
+        }
       }
     }
 

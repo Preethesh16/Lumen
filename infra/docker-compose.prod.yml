@@ -74,9 +74,11 @@ services:
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY is required}
       N8N_PORT: 5678
       N8N_HOST: ${N8N_HOST:-localhost}
-      WEBHOOK_URL: ${N8N_PUBLIC_URL:-http://localhost:5678/}
+      N8N_WEBHOOK_URL: ${N8N_PUBLIC_URL:-http://localhost:5678/}
       GENERIC_TIMEZONE: Etc/UTC
       TZ: Etc/UTC
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
       LUMEN_API_BASE_URL: http://api:4000
       N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET:?N8N_WEBHOOK_SECRET is required}
       N8N_DIAGNOSTICS_ENABLED: "false"

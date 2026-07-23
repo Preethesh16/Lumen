@@ -49,9 +49,13 @@ services:
 
       N8N_PORT: 5678
       N8N_HOST: localhost
-      WEBHOOK_URL: http://localhost:${N8N_PORT:-5678}/
+      N8N_WEBHOOK_URL: http://localhost:${N8N_PORT:-5678}/
       GENERIC_TIMEZONE: Etc/UTC
       TZ: Etc/UTC
+      # Required because the version-controlled workflow reads the API URL and
+      # shared secret from $env expressions inside HTTP Request nodes.
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
 
       # Where the ingestion workflows POST their results.
       LUMEN_API_BASE_URL: ${LUMEN_API_BASE_URL:-http://host.docker.internal:4000}

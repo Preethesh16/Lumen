@@ -272,3 +272,27 @@ deprecated GitHub action runtimes were upgraded.
 **External steps remaining:** rotate the Groq key exposed in chat; configure
 fresh provider credentials; import/activate n8n; approve ReliefWeb appname;
 choose a production host/domain; perform a live delivery; record the demo.
+
+---
+
+## Session 5 — 2026-07-24 — Live delivery and n8n activation
+
+- Configured and live-tested Groq, Telegram, and Resend through `.env`; no
+  credential was committed.
+- Telegram delivered a generated Syria brief. Added a long-polling command
+  listener restricted to the configured chat, with `/start`, `/help`,
+  `/status`, and natural-language current-update handling.
+- Resend delivered the same grounded workflow through
+  `onboarding@resend.dev` to the verified account address.
+- Updated the workflow export for n8n 2.x CLI compatibility with a stable ID
+  and database-managed tags removed.
+- Imported and published `Lumen — daily ingest` in local n8n. Enabled the
+  explicitly required `$env` access for the HTTP nodes and updated the webhook
+  environment variable name.
+- The first n8n execution exposed an unbounded GDELT failure path: the HTTP node
+  timed out after ten minutes and retried. Added a three-consecutive-failure
+  circuit breaker with shorter request bounds, then confirmed a complete live
+  ingestion in under two minutes despite GDELT throttling and the intentionally
+  unconfigured ReliefWeb appname.
+- Added four Telegram command-response tests and one GDELT circuit-breaker
+  test.

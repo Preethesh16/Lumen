@@ -25,7 +25,7 @@ is not proportional to need. Lumen measures that gap and makes it rankable.
 | n8n workflow | Daily ingest → grounded brief → Telegram/email delivery; JSON-validated |
 | Next.js dashboard (`apps/web`) | Complete; list, detail, trends, evidence, briefs, empty/error states |
 | Brief generation | Complete; optional Groq narrative with deterministic grounded fallback |
-| Telegram + email delivery | Complete; credentials required for a live send |
+| Telegram + email delivery | Complete and live-tested; Telegram also supports `/start`, `/help`, `/status` |
 | CI/CD | Verification on every push; production images published from `main` |
 
 ## Quickstart
@@ -67,6 +67,11 @@ generates a brief for the highest-ranked crisis, and attempts configured
 delivery channels. All business logic lives in tested API modules, not in n8n.
 For n8n to reach the API on Linux, run the API on the host and keep
 `LUMEN_API_BASE_URL=http://host.docker.internal:4000`.
+
+When Telegram credentials are configured, the API process also starts a
+long-polling command listener restricted to `TELEGRAM_CHAT_ID`. `/status`
+returns the latest highest-ranked crisis directly from Postgres; unknown chats
+are ignored.
 
 Run tests:
 

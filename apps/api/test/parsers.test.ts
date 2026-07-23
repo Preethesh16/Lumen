@@ -7,10 +7,10 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { parseUnhcr } from '../src/ingest/sources/unhcr.js';
 import { parseFtsPlans, parseFtsFlow, buildFtsObservations } from '../src/ingest/sources/fts.js';
-import { parseGdeltTimeline } from '../src/ingest/sources/gdelt.js';
+import { gdeltAdapter, parseGdeltTimeline } from '../src/ingest/sources/gdelt.js';
 import { parseReliefWeb } from '../src/ingest/sources/reliefweb.js';
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
@@ -140,6 +140,38 @@ describe('parseGdeltTimeline', () => {
     expect(
       parseGdeltTimeline({ timeline: [{ data: [{ date: 'x', value: NaN }] }] }),
     ).toBeNull();
+  });
+});
+
+describe('gdeltAdapter', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it('stops after three consecutive upstream failures', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+      text: async () => 'temporarily unavailable',
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const resultPromise = gdeltAdapter.fetch({
+      observedAt: DAY,
+      iso3s: ['AFG', 'SDN', 'UKR', 'YEM'],
+    });
+    await vi.runAllTimersAsync();
+    const result = await resultPromise;
+
+    // Each country gets one retry, but the fourth country is skipped by the
+    // circuit breaker instead of extending the scheduler run indefinitely.
+    expect(fetchMock).toHaveBeenCalledTimes(6);
+    expect(result.observations).toHaveLength(0);
+    expect(result.warnings.some((warning) => warning.includes('1 remaining countries'))).toBe(
+      true,
+    );
   });
 });
 

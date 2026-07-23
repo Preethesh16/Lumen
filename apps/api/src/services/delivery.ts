@@ -24,7 +24,15 @@ async function deliverTelegram(brief: Brief): Promise<DeliveryResult> {
         signal: AbortSignal.timeout(15_000),
       },
     );
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) {
+      const body = (await response.json().catch(() => null)) as {
+        message?: string;
+        error?: { message?: string };
+      } | null;
+      throw new Error(
+        `HTTP ${response.status}: ${body?.message ?? body?.error?.message ?? 'Telegram rejected the request'}`,
+      );
+    }
     return { channel: 'telegram', status: 'sent', message: 'Sent to Telegram' };
   } catch (error) {
     return {
@@ -55,7 +63,15 @@ async function deliverEmail(brief: Brief): Promise<DeliveryResult> {
       }),
       signal: AbortSignal.timeout(15_000),
     });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) {
+      const body = (await response.json().catch(() => null)) as {
+        message?: string;
+        error?: { message?: string };
+      } | null;
+      throw new Error(
+        `HTTP ${response.status}: ${body?.message ?? body?.error?.message ?? 'Resend rejected the request'}`,
+      );
+    }
     return { channel: 'email', status: 'sent', message: 'Sent by email' };
   } catch (error) {
     return {
