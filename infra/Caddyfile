@@ -1,0 +1,9 @@
+{$LUMEN_WEB_HOST:localhost} {
+	encode zstd gzip
+	reverse_proxy web:3000
+}
+
+{$LUMEN_API_HOST:localhost} {
+	encode zstd gzip
+	reverse_proxy api:4000
+}

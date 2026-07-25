@@ -39,7 +39,7 @@ services:
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-Lumen <briefs@example.com>}
       DELIVERY_EMAIL_TO: ${DELIVERY_EMAIL_TO:-}
     ports:
-      - "${API_PORT:-4000}:4000"
+      - "127.0.0.1:${API_PORT:-4000}:4000"
 
   web:
     image: ${LUMEN_WEB_IMAGE:-lumen-web:local}
@@ -53,7 +53,25 @@ services:
       API_BASE_URL: http://api:4000
       LUMEN_ADMIN_SECRET: ${N8N_WEBHOOK_SECRET:?N8N_WEBHOOK_SECRET is required}
     ports:
-      - "${WEB_PORT:-3000}:3000"
+      - "127.0.0.1:${WEB_PORT:-3000}:3000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - api
+      - web
+    environment:
+      LUMEN_WEB_HOST: ${LUMEN_WEB_HOST:-localhost}
+      LUMEN_API_HOST: ${LUMEN_API_HOST:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
 
   n8n:
     image: docker.n8n.io/n8nio/n8n:latest
@@ -84,7 +102,7 @@ services:
       N8N_DIAGNOSTICS_ENABLED: "false"
       N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
     ports:
-      - "${N8N_PORT:-5678}:5678"
+      - "127.0.0.1:${N8N_PORT:-5678}:5678"
     volumes:
       - n8n_data:/home/node/.n8n
       - ./../n8n/workflows:/workflows:ro
@@ -92,3 +110,5 @@ services:
 volumes:
   postgres_data:
   n8n_data:
+  caddy_data:
+  caddy_config:
