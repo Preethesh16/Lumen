@@ -385,7 +385,7 @@ describe('brief generation and delivery', () => {
     ]);
   });
 
-  it('runs brief generation for the highest-ranked crisis', async () => {
+  it('runs brief generation and returns one combined digest delivery result', async () => {
     await createScore();
     const response = await briefRequest('/briefs/run', {
       limit: 1,
@@ -395,6 +395,21 @@ describe('brief generation and delivery', () => {
     expect(response.status).toBe(201);
     expect(response.json.data).toHaveLength(1);
     expect(response.json.data[0].iso3).toBe('SDN');
+    expect(response.json.data[0].rank).toBe(1);
+    expect(response.json.delivery).toEqual([]);
+    expect(response.json.scoredFor).toBe(TODAY);
+  });
+
+  it('defaults to a multi-crisis daily digest instead of a single crisis', async () => {
+    await createScore();
+    const response = await briefRequest('/briefs/run', {
+      forceTemplate: true,
+      channels: [],
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.json.data).toHaveLength(3);
+    expect(response.json.data.map((item: { rank: number }) => item.rank)).toEqual([1, 2, 3]);
   });
 });
 

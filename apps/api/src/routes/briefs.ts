@@ -12,7 +12,7 @@ import { db } from '../db/client.js';
 import { briefs, crises, crisisScores } from '../db/schema.js';
 import { env } from '../env.js';
 import { asyncHandler, badRequest, notFound, unauthorized } from '../lib/errors.js';
-import { deliverBrief } from '../services/delivery.js';
+import { deliverBrief, deliverDailyDigest, type DailyDigestItem } from '../services/delivery.js';
 import { generateBrief } from '../services/briefs.js';
 
 export const briefsRouter: Router = Router();
@@ -80,7 +80,7 @@ briefsRouter.post(
 );
 
 const runSchema = z.object({
-  limit: z.number().int().min(1).max(10).default(1),
+  limit: z.number().int().min(1).max(10).default(5),
   audience: z.enum(BRIEF_AUDIENCES).default('journalist'),
   channels: z.array(z.enum(['telegram', 'email'])).default(['telegram', 'email']),
   forceTemplate: z.boolean().optional(),
@@ -100,7 +100,15 @@ briefsRouter.post(
     if (!latest) throw notFound('No scored crises are available');
 
     const ranked = await db
-      .select({ crisisId: crises.id, iso3: crises.iso3 })
+      .select({
+        crisisId: crises.id,
+        iso3: crises.iso3,
+        name: crises.name,
+        needScore: crisisScores.needScore,
+        coverageScore: crisisScores.coverageScore,
+        attentionGapScore: crisisScores.attentionGapScore,
+        fundingGapPct: crisisScores.fundingGapPct,
+      })
       .from(crisisScores)
       .innerJoin(crises, eq(crises.id, crisisScores.crisisId))
       .where(eq(crisisScores.scoredFor, latest.scoredFor))
@@ -108,21 +116,48 @@ briefsRouter.post(
       .limit(parsed.data.limit);
 
     const data = [];
-    for (const crisis of ranked) {
+    const digestItems: DailyDigestItem[] = [];
+    for (const [index, crisis] of ranked.entries()) {
       const generated = await generateBrief(crisis.crisisId, parsed.data.audience, {
         forceTemplate: parsed.data.forceTemplate,
       });
-      const delivery = await deliverBrief(generated.data, parsed.data.channels);
+      const summary = generated.data.content.split(/\n\n+/).slice(1).join(' ').trim();
+      const item = {
+        rank: index + 1,
+        name: crisis.name,
+        iso3: crisis.iso3,
+        needScore: Number(crisis.needScore),
+        coverageScore: Number(crisis.coverageScore),
+        attentionGapScore: Number(crisis.attentionGapScore),
+        fundingGapPct:
+          crisis.fundingGapPct === null ? null : Number(crisis.fundingGapPct),
+        summary,
+        usedFallback: generated.usedFallback,
+      };
+      digestItems.push(item);
       data.push({
         crisisId: crisis.crisisId,
         iso3: crisis.iso3,
+        name: crisis.name,
+        rank: item.rank,
+        needScore: item.needScore,
+        coverageScore: item.coverageScore,
+        attentionGapScore: item.attentionGapScore,
+        fundingGapPct: item.fundingGapPct,
         brief: generated.data,
         usedFallback: generated.usedFallback,
-        delivery,
       });
     }
 
-    const body: RunBriefsResponse = { data };
+    const delivery = await deliverDailyDigest(
+      {
+        scoredFor: latest.scoredFor,
+        audience: parsed.data.audience,
+        items: digestItems,
+      },
+      parsed.data.channels,
+    );
+    const body: RunBriefsResponse = { scoredFor: latest.scoredFor, data, delivery };
     res.status(201).json(body);
   }),
 );

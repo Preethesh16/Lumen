@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="297mm" viewBox="0 0 794 1123">
+  <defs>
+    <linearGradient id="hero" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#081728"/>
+      <stop offset="0.58" stop-color="#10364b"/>
+      <stop offset="1" stop-color="#0f766e"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#0b172a" flood-opacity=".12"/>
+    </filter>
+    <style>
+      .sans{font-family:"DejaVu Sans",sans-serif}.white{fill:#fff}.ink{fill:#102a43}.body{font:400 14px "DejaVu Sans",sans-serif;fill:#334e68}.small{font:400 11.5px "DejaVu Sans",sans-serif;fill:#526b7a}.label{font:700 11px "DejaVu Sans",sans-serif;letter-spacing:1.4px;fill:#0f766e}.h2{font:700 22px "DejaVu Sans",sans-serif;fill:#102a43}.h3{font:700 15px "DejaVu Sans",sans-serif;fill:#102a43}.metric{font:700 27px "DejaVu Sans",sans-serif;fill:#0f766e}.footer{font:600 10px "DejaVu Sans",sans-serif;fill:#60788a}
+    </style>
+  </defs>
+  <rect width="794" height="1123" fill="#f3f7fa"/>
+  <rect width="794" height="360" fill="url(#hero)"/>
+  <circle cx="72" cy="70" r="31" fill="#14b8a6"/>
+  <path d="M54 89V51h8v30h21v8z M69 51h8l12 25V51h8v38h-8L77 64v25h-8z" fill="#fff"/>
+  <text x="120" y="57" class="sans white" font-size="13" font-weight="700" letter-spacing="2">IBM SKILLSBUILD PROJECT</text>
+  <text x="120" y="83" class="sans white" font-size="17" font-weight="700">LUMEN</text>
+
+  <text x="50" y="151" class="sans white" font-size="13" font-weight="700" letter-spacing="2.2">CONCEPT NOTE</text>
+  <text x="50" y="207" class="sans white" font-size="38" font-weight="700">Humanitarian</text>
+  <text x="50" y="253" class="sans white" font-size="38" font-weight="700">Attention-Gap Intelligence</text>
+  <text x="52" y="291" class="sans" fill="#c9ece8" font-size="17">From fragmented evidence to explainable rankings and timely outreach.</text>
+
+  <rect x="50" y="318" width="116" height="25" rx="12.5" fill="#14b8a6"/>
+  <text x="108" y="335" text-anchor="middle" class="sans white" font-size="10.5" font-weight="700">LIVE PROTOTYPE</text>
+  <text x="181" y="335" class="sans" fill="#d8e7f0" font-size="12">Preethesh · Deepthi</text>
+  <text x="674" y="335" text-anchor="end" class="sans" fill="#d8e7f0" font-size="12">July 2026</text>
+
+  <rect x="42" y="392" width="710" height="225" rx="14" fill="#fff" filter="url(#shadow)"/>
+  <text x="68" y="427" class="label">EXECUTIVE SUMMARY</text>
+  <text x="68" y="464" class="body">
+    <tspan x="68" dy="0">Lumen identifies humanitarian crises where human need is high but public and media</tspan>
+    <tspan x="68" dy="22">attention is disproportionately low. It combines displacement, appeal, funding, disaster</tspan>
+    <tspan x="68" dy="22">and coverage signals; calculates a transparent Attention-Gap Score; and converts the</tspan>
+    <tspan x="68" dy="22">evidence into grounded briefs for journalists, NGOs and donors.</tspan>
+  </text>
+  <text x="68" y="562" class="body">
+    <tspan x="68" dy="0">The deployed platform creates one repeatable flow from public data to ranking, explanation</tspan>
+    <tspan x="68" dy="22">and action through a web dashboard, Telegram bot and email delivery.</tspan>
+  </text>
+
+  <text x="42" y="667" class="label">PROJECT AT A GLANCE</text>
+  <g filter="url(#shadow)">
+    <rect x="42" y="688" width="166" height="126" rx="12" fill="#fff"/>
+    <rect x="223" y="688" width="166" height="126" rx="12" fill="#fff"/>
+    <rect x="404" y="688" width="166" height="126" rx="12" fill="#fff"/>
+    <rect x="585" y="688" width="167" height="126" rx="12" fill="#fff"/>
+  </g>
+  <text x="62" y="729" class="metric">26</text>
+  <text x="62" y="755" class="h3">initial crises</text>
+  <text x="62" y="776" class="small">monitored as one</text>
+  <text x="62" y="793" class="small">comparable cohort</text>
+
+  <text x="243" y="729" class="metric">Daily</text>
+  <text x="243" y="755" class="h3">automated flow</text>
+  <text x="243" y="776" class="small">ingest, score, brief</text>
+  <text x="243" y="793" class="small">and deliver</text>
+
+  <text x="424" y="729" class="metric">3</text>
+  <text x="424" y="755" class="h3">delivery surfaces</text>
+  <text x="424" y="776" class="small">dashboard, Telegram</text>
+  <text x="424" y="793" class="small">and email</text>
+
+  <text x="605" y="729" class="metric">Live</text>
+  <text x="605" y="755" class="h3">production system</text>
+  <text x="605" y="776" class="small">HTTPS, containers</text>
+  <text x="605" y="793" class="small">and scheduled n8n</text>
+
+  <rect x="42" y="850" width="710" height="198" rx="14" fill="#e7f5f3" stroke="#a7dcd6"/>
+  <text x="68" y="886" class="label">CORE PROPOSITION</text>
+  <text x="68" y="928" class="sans ink" font-size="24" font-weight="700">
+    <tspan x="68" dy="0">Reveal where need is high but attention is low—</tspan>
+    <tspan x="68" dy="32">then turn the evidence into a</tspan>
+    <tspan x="68" dy="32">ready-to-share brief.</tspan>
+  </text>
+  <text x="68" y="1028" class="body">One clear ranking. Traceable facts. Immediate outreach.</text>
+
+  <text x="42" y="1091" class="footer">LUMEN · CONCEPT NOTE</text>
+  <text x="752" y="1091" text-anchor="end" class="footer">01 / 05</text>
+</svg>

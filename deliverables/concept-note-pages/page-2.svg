@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="297mm" viewBox="0 0 794 1123">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0b172a" flood-opacity=".1"/></filter>
+    <style>
+      .body{font:400 13.5px "DejaVu Sans",sans-serif;fill:#334e68}.strong{font:700 13.5px "DejaVu Sans",sans-serif;fill:#102a43}.small{font:400 11.5px "DejaVu Sans",sans-serif;fill:#526b7a}.label{font:700 10.5px "DejaVu Sans",sans-serif;letter-spacing:1.25px;fill:#0f766e}.h1{font:700 27px "DejaVu Sans",sans-serif;fill:#102a43}.h2{font:700 19px "DejaVu Sans",sans-serif;fill:#102a43}.h3{font:700 14.5px "DejaVu Sans",sans-serif;fill:#102a43}.footer{font:600 10px "DejaVu Sans",sans-serif;fill:#60788a}.num{font:700 12px "DejaVu Sans",sans-serif;fill:#fff;text-anchor:middle;dominant-baseline:middle}
+    </style>
+  </defs>
+  <rect width="794" height="1123" fill="#f3f7fa"/>
+  <rect width="794" height="84" fill="#0d2539"/>
+  <circle cx="45" cy="42" r="18" fill="#14b8a6"/><text x="45" y="47" text-anchor="middle" font-family="DejaVu Sans" font-size="21" font-weight="700" fill="#fff">L</text>
+  <text x="76" y="38" font-family="DejaVu Sans" font-size="14" font-weight="700" fill="#fff">LUMEN</text>
+  <text x="76" y="58" font-family="DejaVu Sans" font-size="11" fill="#b9d9d6">Humanitarian Attention-Gap Intelligence</text>
+  <text x="749" y="50" text-anchor="end" font-family="DejaVu Sans" font-size="11" font-weight="700" fill="#cfe8e5">CONTEXT &amp; PURPOSE</text>
+
+  <text x="42" y="132" class="label">THE NEED</text>
+  <text x="42" y="166" class="h1">A visibility problem with real consequences</text>
+  <text x="42" y="202" class="body">
+    <tspan x="42" dy="0">Humanitarian attention does not always follow humanitarian need. Severe displacement,</tspan>
+    <tspan x="42" dy="21">large response appeals and major funding gaps may coexist with low media visibility.</tspan>
+    <tspan x="42" dy="21">The evidence exists, but it is fragmented across specialist systems and difficult to turn</tspan>
+    <tspan x="42" dy="21">quickly into a defensible priority or communication action.</tspan>
+  </text>
+
+  <g filter="url(#shadow)">
+    <rect x="42" y="303" width="226" height="152" rx="12" fill="#fff"/>
+    <rect x="284" y="303" width="226" height="152" rx="12" fill="#fff"/>
+    <rect x="526" y="303" width="226" height="152" rx="12" fill="#fff"/>
+  </g>
+  <circle cx="68" cy="330" r="13" fill="#f97360"/><text x="68" y="331" class="num">1</text>
+  <text x="91" y="335" class="h3">Fragmented evidence</text>
+  <text x="62" y="371" class="body">
+    <tspan x="62" dy="0">Teams manually reconcile</tspan>
+    <tspan x="62" dy="20">humanitarian, funding and</tspan>
+    <tspan x="62" dy="20">coverage datasets.</tspan>
+  </text>
+
+  <circle cx="310" cy="330" r="13" fill="#f97360"/><text x="310" y="331" class="num">2</text>
+  <text x="333" y="335" class="h3">Delayed discovery</text>
+  <text x="304" y="371" class="body">
+    <tspan x="304" dy="0">Slow comparison delays</tspan>
+    <tspan x="304" dy="20">reporting, advocacy and</tspan>
+    <tspan x="304" dy="20">funding attention.</tspan>
+  </text>
+
+  <circle cx="552" cy="330" r="13" fill="#f97360"/><text x="552" y="331" class="num">3</text>
+  <text x="575" y="335" class="h3">Weak traceability</text>
+  <text x="546" y="371" class="body">
+    <tspan x="546" dy="0">Generic alerts and AI</tspan>
+    <tspan x="546" dy="20">summaries rarely expose a</tspan>
+    <tspan x="546" dy="20">reproducible evidence trail.</tspan>
+  </text>
+
+  <rect x="42" y="489" width="710" height="117" rx="12" fill="#e7f5f3" stroke="#a7dcd6"/>
+  <text x="66" y="521" class="label">PROJECT GOAL</text>
+  <text x="66" y="557" class="h2">Improve the visibility of under-reported humanitarian crises</text>
+  <text x="66" y="584" class="body">Transform trusted public data into explainable prioritization and timely outreach.</text>
+
+  <text x="42" y="650" class="label">OBJECTIVES</text>
+  <g filter="url(#shadow)">
+    <rect x="42" y="670" width="345" height="248" rx="12" fill="#fff"/>
+    <rect x="407" y="670" width="345" height="248" rx="12" fill="#fff"/>
+  </g>
+  <circle cx="66" cy="704" r="5" fill="#14b8a6"/><text x="80" y="709" class="body">Harmonize crisis, displacement,</text>
+  <text x="80" y="729" class="body">funding and coverage signals.</text>
+  <circle cx="66" cy="766" r="5" fill="#14b8a6"/><text x="80" y="771" class="body">Calculate an auditable, versioned</text>
+  <text x="80" y="791" class="body">Attention-Gap Score.</text>
+  <circle cx="66" cy="828" r="5" fill="#14b8a6"/><text x="80" y="833" class="body">Present rankings, trends, evidence</text>
+  <text x="80" y="853" class="body">and briefs through a public dashboard.</text>
+
+  <circle cx="431" cy="704" r="5" fill="#14b8a6"/><text x="445" y="709" class="body">Generate audience-specific briefs</text>
+  <text x="445" y="729" class="body">without invented statistics.</text>
+  <circle cx="431" cy="766" r="5" fill="#14b8a6"/><text x="445" y="771" class="body">Deliver priority findings through</text>
+  <text x="445" y="791" class="body">Telegram and email every day.</text>
+  <circle cx="431" cy="828" r="5" fill="#14b8a6"/><text x="445" y="833" class="body">Build historical evidence for research,</text>
+  <text x="445" y="853" class="body">evaluation and model improvement.</text>
+
+  <text x="42" y="962" class="label">INTENDED USERS</text>
+  <text x="42" y="995" class="strong">Journalists &amp; editors</text>
+  <text x="213" y="995" class="strong">NGO / UN analysts</text>
+  <text x="379" y="995" class="strong">Donor &amp; policy teams</text>
+  <text x="566" y="995" class="strong">University labs</text>
+  <text x="42" y="1020" class="small">News and story discovery</text>
+  <text x="213" y="1020" class="small">Advocacy and monitoring</text>
+  <text x="379" y="1020" class="small">Priority and grant decisions</text>
+  <text x="566" y="1020" class="small">Research and teaching</text>
+
+  <text x="42" y="1091" class="footer">LUMEN · CONCEPT NOTE</text>
+  <text x="397" y="1091" text-anchor="middle" class="footer">SDG 10 · SDG 16 · SDG 17</text>
+  <text x="752" y="1091" text-anchor="end" class="footer">02 / 05</text>
+</svg>

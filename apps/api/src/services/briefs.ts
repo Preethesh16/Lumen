@@ -70,14 +70,25 @@ function observationFact(point: ObservationPoint): string {
   }
 }
 
-function audienceAction(audience: BriefAudience): string {
+function fallbackNarrative(data: Grounding, audience: BriefAudience): string {
+  const attention =
+    data.needScore > data.coverageScore
+      ? `Humanitarian need is outpacing media coverage in ${data.name}`
+      : `Media coverage currently meets or exceeds the measured humanitarian need in ${data.name}`;
+  const funding =
+    data.fundingGapPct === null
+      ? 'funding evidence is currently unavailable'
+      : data.fundingGapPct >= 0.5
+        ? 'the response remains substantially underfunded'
+        : 'the measured funding gap is comparatively smaller';
+
   if (audience === 'donor') {
-    return 'Funding attention should be reviewed against the documented need and current appeal gap.';
+    return `${attention}, while ${funding}; donors should review funding attention against the documented need.`;
   }
   if (audience === 'ngo') {
-    return 'Response teams can use this signal to prioritize coordination, evidence gathering, and advocacy.';
+    return `${attention}, while ${funding}; response teams can use this signal for coordination, evidence gathering, and advocacy.`;
   }
-  return 'Editors should consider commissioning verified reporting that centers affected communities and local responders.';
+  return `${attention}, while ${funding}; verified reporting should center affected communities and local responders.`;
 }
 
 interface Grounding {
@@ -193,12 +204,12 @@ async function groqNarrative(
     body: JSON.stringify({
       model: env.GROQ_MODEL,
       temperature: 0.2,
-      max_completion_tokens: 180,
+      max_completion_tokens: 80,
       messages: [
         {
           role: 'system',
           content:
-            'Write one concise humanitarian briefing paragraph. Use only the supplied qualitative facts. ' +
+            'Write one concise humanitarian briefing sentence of at most 45 words. Use only the supplied qualitative facts. ' +
             'Do not include digits, quantities, dates, rankings, percentages, quotations, names of organizations, ' +
             'or facts not supplied. Do not use markdown. Avoid sensational language.',
         },
@@ -223,6 +234,9 @@ async function groqNarrative(
   if (/\d/.test(content)) {
     throw new Error('Groq response failed the no-invented-statistics guard');
   }
+  if (content.split(/\s+/).length > 45) {
+    throw new Error('Groq response exceeded the 45-word summary limit');
+  }
   return { content, model: env.GROQ_MODEL };
 }
 
@@ -233,7 +247,7 @@ export async function generateBrief(
 ): Promise<GenerateBriefResponse> {
   const data = await loadGrounding(identifier);
   const facts = factParagraph(data);
-  let narrative = audienceAction(audience);
+  let narrative = fallbackNarrative(data, audience);
   let model = TEMPLATE_MODEL;
   let warning: string | null = null;
 

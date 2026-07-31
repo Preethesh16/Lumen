@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="297mm" viewBox="0 0 794 1123">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0b172a" flood-opacity=".1"/></filter>
+    <style>
+      .body{font:400 12px "DejaVu Sans",sans-serif;fill:#334e68}.strong{font:700 12px "DejaVu Sans",sans-serif;fill:#102a43}.small{font:400 10.5px "DejaVu Sans",sans-serif;fill:#526b7a}.label{font:700 10.5px "DejaVu Sans",sans-serif;letter-spacing:1.25px;fill:#0f766e}.h1{font:700 27px "DejaVu Sans",sans-serif;fill:#102a43}.h2{font:700 18px "DejaVu Sans",sans-serif;fill:#102a43}.h3{font:700 13.5px "DejaVu Sans",sans-serif;fill:#102a43}.footer{font:600 10px "DejaVu Sans",sans-serif;fill:#60788a}.phase{font:700 10.5px "DejaVu Sans",sans-serif;fill:#fff;text-anchor:middle;dominant-baseline:middle}
+    </style>
+  </defs>
+  <rect width="794" height="1123" fill="#f3f7fa"/>
+  <rect width="794" height="84" fill="#0d2539"/>
+  <circle cx="45" cy="42" r="18" fill="#14b8a6"/><text x="45" y="47" text-anchor="middle" font-family="DejaVu Sans" font-size="21" font-weight="700" fill="#fff">L</text>
+  <text x="76" y="38" font-family="DejaVu Sans" font-size="14" font-weight="700" fill="#fff">LUMEN</text>
+  <text x="76" y="58" font-family="DejaVu Sans" font-size="11" fill="#b9d9d6">Humanitarian Attention-Gap Intelligence</text>
+  <text x="749" y="50" text-anchor="end" font-family="DejaVu Sans" font-size="11" font-weight="700" fill="#cfe8e5">SUSTAINABILITY &amp; NEXT STEPS</text>
+
+  <text x="42" y="132" class="label">OPERATIONAL READINESS</text>
+  <text x="42" y="166" class="h1">Risks are known, visible and manageable</text>
+
+  <rect x="42" y="199" width="710" height="279" rx="12" fill="#fff" filter="url(#shadow)"/>
+  <rect x="42" y="199" width="710" height="39" rx="12" fill="#e7f5f3"/>
+  <text x="63" y="224" class="label">RISK</text><text x="305" y="224" class="label">MITIGATION</text>
+  <line x1="286" y1="238" x2="286" y2="478" stroke="#d6e1ea"/>
+  <line x1="42" y1="278" x2="752" y2="278" stroke="#d6e1ea"/>
+  <line x1="42" y1="318" x2="752" y2="318" stroke="#d6e1ea"/>
+  <line x1="42" y1="358" x2="752" y2="358" stroke="#d6e1ea"/>
+  <line x1="42" y1="398" x2="752" y2="398" stroke="#d6e1ea"/>
+  <line x1="42" y1="438" x2="752" y2="438" stroke="#d6e1ea"/>
+  <text x="63" y="263" class="strong">API failure or rate limiting</text><text x="305" y="263" class="body">Timeouts, retry/backoff, pacing and partial-source scoring</text>
+  <text x="63" y="303" class="strong">Missing or uneven data</text><text x="305" y="303" class="body">Drop missing inputs, re-normalize weights, expose evidence</text>
+  <text x="63" y="343" class="strong">Invented AI statistics</text><text x="305" y="343" class="body">Deterministic facts, score linkage, validation and fallback</text>
+  <text x="63" y="383" class="strong">Score drift across cohorts</text><text x="305" y="383" class="body">Retain raw inputs and versions for future recalculation</text>
+  <text x="63" y="423" class="strong">Secret exposure</text><text x="305" y="423" class="body">Environment-only credentials, HTTPS and restricted routes</text>
+  <text x="63" y="463" class="strong">Cost after cloud credits</text><text x="305" y="463" class="body">Spending alerts, usage review and a smaller pilot deployment</text>
+
+  <text x="42" y="522" class="label">SUSTAINABILITY MODEL</text>
+  <rect x="42" y="542" width="456" height="206" rx="12" fill="#fff" filter="url(#shadow)"/>
+  <text x="64" y="576" class="h3">Keep public value free; fund advanced institutional use</text>
+  <circle cx="68" cy="610" r="4.5" fill="#14b8a6"/><text x="81" y="615" class="body">Free public dashboard for visibility, trust and discovery</text>
+  <circle cx="68" cy="644" r="4.5" fill="#14b8a6"/><text x="81" y="649" class="body">Team subscriptions for custom alerts, exports and history</text>
+  <circle cx="68" cy="678" r="4.5" fill="#14b8a6"/><text x="81" y="683" class="body">Institutional API access for newsrooms, NGOs and donors</text>
+  <circle cx="68" cy="712" r="4.5" fill="#14b8a6"/><text x="81" y="717" class="body">Sponsored monitoring, research grants and philanthropy</text>
+
+  <rect x="518" y="542" width="234" height="206" rx="12" fill="#0f766e"/>
+  <text x="541" y="576" font-family="DejaVu Sans" font-size="10.5" font-weight="700" letter-spacing="1.1" fill="#bce8e3">CURRENT BASE COST</text>
+  <text x="541" y="628" font-family="DejaVu Sans" font-size="31" font-weight="700" fill="#fff">≈ $24</text>
+  <text x="541" y="654" font-family="DejaVu Sans" font-size="13" fill="#d7eeeb">per month</text>
+  <text x="541" y="690" font-family="DejaVu Sans" font-size="11" fill="#d7eeeb">Production server</text>
+  <text x="541" y="709" font-family="DejaVu Sans" font-size="11" fill="#d7eeeb">Variable provider, domain</text>
+  <text x="541" y="728" font-family="DejaVu Sans" font-size="11" fill="#d7eeeb">and monitoring costs extra</text>
+
+  <text x="42" y="792" class="label">WORK PLAN</text>
+  <g>
+    <line x1="92" y1="848" x2="702" y2="848" stroke="#b8c7d5" stroke-width="4"/>
+    <circle cx="92" cy="848" r="19" fill="#14b8a6"/><text x="92" y="849" class="phase">1</text>
+    <circle cx="295" cy="848" r="19" fill="#14b8a6"/><text x="295" y="849" class="phase">2</text>
+    <circle cx="498" cy="848" r="19" fill="#14b8a6"/><text x="498" y="849" class="phase">3</text>
+    <circle cx="702" cy="848" r="19" fill="#f97360"/><text x="702" y="849" class="phase">4</text>
+  </g>
+  <text x="92" y="890" text-anchor="middle" class="strong">Foundation</text>
+  <text x="92" y="910" text-anchor="middle" class="small">Completed</text>
+  <text x="295" y="890" text-anchor="middle" class="strong">Core intelligence</text>
+  <text x="295" y="910" text-anchor="middle" class="small">Completed</text>
+  <text x="498" y="890" text-anchor="middle" class="strong">Delivery &amp; UX</text>
+  <text x="498" y="910" text-anchor="middle" class="small">Completed</text>
+  <text x="702" y="890" text-anchor="middle" class="strong">Validation</text>
+  <text x="702" y="910" text-anchor="middle" class="small">Next</text>
+
+  <rect x="42" y="946" width="710" height="105" rx="12" fill="#e7f5f3" stroke="#a7dcd6"/>
+  <text x="64" y="978" class="label">NEXT PRIORITY</text>
+  <text x="64" y="1007" class="body">Validate the deployed prototype with journalists, humanitarian analysts and donor teams;</text>
+  <text x="64" y="1028" class="body">activate ReliefWeb after approval; calibrate the scoring model; and document real-world use.</text>
+
+  <text x="42" y="1091" class="footer">LUMEN · CONCEPT NOTE</text>
+  <text x="397" y="1091" text-anchor="middle" class="footer">From evidence to attention to action.</text>
+  <text x="752" y="1091" text-anchor="end" class="footer">05 / 05</text>
+</svg>

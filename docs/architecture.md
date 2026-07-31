@@ -156,7 +156,7 @@ These are recorded deliberately, not overlooked.
 | `POST` | `/webhook/n8n-score-update` | Ingest pre-parsed observations; shared-secret, idempotent |
 | `POST` | `/briefs/generate` | Generate and store one grounded brief; admin-secret |
 | `POST` | `/briefs/:id/deliver` | Deliver a stored brief through Telegram/email; admin-secret |
-| `POST` | `/briefs/run` | Generate/deliver briefs for the top-ranked crises; admin-secret |
+| `POST` | `/briefs/run` | Generate short summaries for the Top 5 and deliver one combined daily digest; admin-secret |
 
 Ingestion can also be run from a terminal without n8n:
 `pnpm --filter @lumen/api ingest [source]`.
@@ -180,9 +180,16 @@ paragraph. Any digit in model output fails validation and activates the
 deterministic audience-specific fallback. Thus a provider outage, missing key,
 rate limit, or hallucinated quantity cannot remove or corrupt a brief.
 
+The scheduled `/briefs/run` route defaults to the five highest attention-gap
+scores. It stores one grounded brief per crisis, extracts each concise
+narrative, and sends a single digest per configured channel. Each digest entry
+contains the key scores and a `DASHBOARD_BASE_URL/crises/:iso3` link; the
+dashboard remains the canonical location for full source evidence and history.
+
 ## Telegram interaction
 
-Telegram has two paths. Outreach sends stored briefs through `sendMessage`.
+Telegram has two paths. Scheduled outreach sends one Top 5 digest through
+`sendMessage`; manual dashboard actions can still send an individual stored brief.
 The API process also runs one long-polling command listener for `/start`,
 `/help`, and `/status`. It responds only to the configured
 `TELEGRAM_CHAT_ID`; other chats are ignored. Status text is queried from the

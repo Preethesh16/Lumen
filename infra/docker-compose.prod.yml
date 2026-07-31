@@ -38,6 +38,7 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-Lumen <briefs@example.com>}
       DELIVERY_EMAIL_TO: ${DELIVERY_EMAIL_TO:-}
+      DASHBOARD_BASE_URL: ${DASHBOARD_BASE_URL:?DASHBOARD_BASE_URL is required}
     ports:
       - "127.0.0.1:${API_PORT:-4000}:4000"
 

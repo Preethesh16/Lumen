@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="297mm" viewBox="0 0 794 1123">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0b172a" flood-opacity=".1"/></filter>
+    <style>
+      .body{font:400 12.8px "DejaVu Sans",sans-serif;fill:#334e68}.strong{font:700 12.8px "DejaVu Sans",sans-serif;fill:#102a43}.small{font:400 10.8px "DejaVu Sans",sans-serif;fill:#526b7a}.label{font:700 10.5px "DejaVu Sans",sans-serif;letter-spacing:1.25px;fill:#0f766e}.h1{font:700 27px "DejaVu Sans",sans-serif;fill:#102a43}.h2{font:700 18px "DejaVu Sans",sans-serif;fill:#102a43}.h3{font:700 14px "DejaVu Sans",sans-serif;fill:#102a43}.footer{font:600 10px "DejaVu Sans",sans-serif;fill:#60788a}.check{font:700 11px "DejaVu Sans",sans-serif;fill:#fff;text-anchor:middle;dominant-baseline:middle}
+    </style>
+  </defs>
+  <rect width="794" height="1123" fill="#f3f7fa"/>
+  <rect width="794" height="84" fill="#0d2539"/>
+  <circle cx="45" cy="42" r="18" fill="#14b8a6"/><text x="45" y="47" text-anchor="middle" font-family="DejaVu Sans" font-size="21" font-weight="700" fill="#fff">L</text>
+  <text x="76" y="38" font-family="DejaVu Sans" font-size="14" font-weight="700" fill="#fff">LUMEN</text>
+  <text x="76" y="58" font-family="DejaVu Sans" font-size="11" fill="#b9d9d6">Humanitarian Attention-Gap Intelligence</text>
+  <text x="749" y="50" text-anchor="end" font-family="DejaVu Sans" font-size="11" font-weight="700" fill="#cfe8e5">DELIVERY &amp; IMPACT</text>
+
+  <text x="42" y="132" class="label">IMPLEMENTATION STATUS</text>
+  <text x="42" y="166" class="h1">A working end-to-end production prototype</text>
+  <text x="42" y="197" class="body">The platform is deployed over HTTPS and the complete data-to-notification loop has been tested.</text>
+
+  <rect x="42" y="229" width="710" height="277" rx="12" fill="#fff" filter="url(#shadow)"/>
+  <g>
+    <circle cx="68" cy="266" r="11" fill="#14b8a6"/><text x="68" y="267" class="check">✓</text>
+    <text x="88" y="271" class="strong">PostgreSQL schema, migrations and idempotent evidence storage</text>
+    <circle cx="68" cy="310" r="11" fill="#14b8a6"/><text x="68" y="311" class="check">✓</text>
+    <text x="88" y="315" class="strong">Tested Attention-Gap scoring engine and Express API</text>
+    <circle cx="68" cy="354" r="11" fill="#14b8a6"/><text x="68" y="355" class="check">✓</text>
+    <text x="88" y="359" class="strong">Live UNHCR and OCHA FTS ingestion with resilient source adapters</text>
+    <circle cx="68" cy="398" r="11" fill="#14b8a6"/><text x="68" y="399" class="check">✓</text>
+    <text x="88" y="403" class="strong">Next.js dashboard with rankings, trends, evidence and failure states</text>
+    <circle cx="68" cy="442" r="11" fill="#14b8a6"/><text x="68" y="443" class="check">✓</text>
+    <text x="88" y="447" class="strong">Grounded brief generation plus live-tested Telegram and email delivery</text>
+    <circle cx="68" cy="486" r="11" fill="#14b8a6"/><text x="68" y="487" class="check">✓</text>
+    <text x="88" y="491" class="strong">Daily n8n automation, CI/CD, containers and public production deployment</text>
+  </g>
+
+  <rect x="42" y="530" width="710" height="92" rx="12" fill="#fff1eb" stroke="#f2c4b7"/>
+  <text x="64" y="561" class="label">CURRENT LIMITATION</text>
+  <text x="64" y="589" class="body">ReliefWeb needs a pre-approved appname. Until approval, that optional signal is skipped;</text>
+  <text x="64" y="609" class="body">other sources continue producing rankings. GDELT rate limits are handled with pacing and retry.</text>
+
+  <text x="42" y="668" class="label">WHY IT IS DIFFERENT</text>
+  <g filter="url(#shadow)">
+    <rect x="42" y="689" width="223" height="151" rx="12" fill="#fff"/>
+    <rect x="286" y="689" width="222" height="151" rx="12" fill="#fff"/>
+    <rect x="529" y="689" width="223" height="151" rx="12" fill="#fff"/>
+  </g>
+  <text x="62" y="723" class="h3">Transparent priority</text>
+  <text x="62" y="754" class="body"><tspan x="62">Need-versus-attention logic</tspan><tspan x="62" dy="20">instead of an opaque score.</tspan></text>
+  <text x="306" y="723" class="h3">Replayable evidence</text>
+  <text x="306" y="754" class="body"><tspan x="306">Raw readings and versioned</tspan><tspan x="306" dy="20">inputs support audit and reuse.</tspan></text>
+  <text x="549" y="723" class="h3">Built for action</text>
+  <text x="549" y="754" class="body"><tspan x="549">One workflow joins discovery,</tspan><tspan x="549" dy="20">explanation and delivery.</tspan></text>
+
+  <rect x="42" y="865" width="345" height="181" rx="12" fill="#e7f5f3" stroke="#a7dcd6"/>
+  <text x="64" y="899" class="label">EXPECTED OUTCOMES</text>
+  <circle cx="68" cy="930" r="4.5" fill="#14b8a6"/><text x="81" y="935" class="body">Faster discovery of overlooked crises</text>
+  <circle cx="68" cy="963" r="4.5" fill="#14b8a6"/><text x="81" y="968" class="body">Lower manual research effort</text>
+  <circle cx="68" cy="996" r="4.5" fill="#14b8a6"/><text x="81" y="1001" class="body">More traceable public-interest briefs</text>
+  <circle cx="68" cy="1029" r="4.5" fill="#14b8a6"/><text x="81" y="1034" class="body">Greater visibility for underfunded crises</text>
+
+  <rect x="407" y="865" width="345" height="181" rx="12" fill="#edf3fb" stroke="#b9cee7"/>
+  <text x="429" y="899" class="label">KEY INDICATORS</text>
+  <circle cx="433" cy="930" r="4.5" fill="#1687b8"/><text x="446" y="935" class="body">Source freshness and success rate</text>
+  <circle cx="433" cy="963" r="4.5" fill="#1687b8"/><text x="446" y="968" class="body">Crises successfully scored</text>
+  <circle cx="433" cy="996" r="4.5" fill="#1687b8"/><text x="446" y="1001" class="body">Brief and delivery success rate</text>
+  <circle cx="433" cy="1029" r="4.5" fill="#1687b8"/><text x="446" y="1034" class="body">Users, shares and downstream actions</text>
+
+  <text x="42" y="1091" class="footer">LUMEN · CONCEPT NOTE</text>
+  <text x="397" y="1091" text-anchor="middle" class="footer">lumen.64-227-166-157.sslip.io</text>
+  <text x="752" y="1091" text-anchor="end" class="footer">04 / 05</text>
+</svg>

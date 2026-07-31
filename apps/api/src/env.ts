@@ -32,6 +32,7 @@ const envSchema = z.object({
     (value) => (value === '' ? undefined : value),
     z.string().email().optional(),
   ),
+  DASHBOARD_BASE_URL: z.string().url().default('http://localhost:3000'),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -66,27 +66,27 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\"limit\":1,\"audience\":\"journalist\",\"channels\":[\"telegram\",\"email\"]}",
+        "jsonBody": "={\"limit\":5,\"audience\":\"journalist\",\"channels\":[\"telegram\",\"email\"]}",
         "options": {
-          "timeout": 60000,
+          "timeout": 120000,
           "response": { "response": { "neverError": true, "fullResponse": true } }
         }
       },
       "id": "brief",
-      "name": "Generate and deliver top brief",
+      "name": "Generate and deliver Top 5 digest",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [720, 300],
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 15000,
-      "notes": "Generates one grounded brief for the highest-ranked crisis. Groq is optional: the API uses a deterministic template when no key is configured. Telegram/email are attempted only when their credentials exist."
+      "notes": "Generates short grounded summaries for the five highest-ranked crises, then sends one combined daily digest to Telegram and email. Each entry links to the dashboard for full details. Groq is optional: the API uses a deterministic template when no key is configured."
     }
   ],
   "connections": {
     "Daily 02:00 UTC": { "main": [[{ "node": "Run all sources", "type": "main", "index": 0 }]] },
     "Run all sources": { "main": [[{ "node": "Report result", "type": "main", "index": 0 }]] },
-    "Report result": { "main": [[{ "node": "Generate and deliver top brief", "type": "main", "index": 0 }]] }
+    "Report result": { "main": [[{ "node": "Generate and deliver Top 5 digest", "type": "main", "index": 0 }]] }
   },
   "settings": {
     "executionOrder": "v1",

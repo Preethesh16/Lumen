@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="297mm" viewBox="0 0 794 1123">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0b172a" flood-opacity=".1"/></filter>
+    <style>
+      .body{font:400 13px "DejaVu Sans",sans-serif;fill:#334e68}.strong{font:700 13px "DejaVu Sans",sans-serif;fill:#102a43}.small{font:400 11px "DejaVu Sans",sans-serif;fill:#526b7a}.label{font:700 10.5px "DejaVu Sans",sans-serif;letter-spacing:1.25px;fill:#0f766e}.h1{font:700 27px "DejaVu Sans",sans-serif;fill:#102a43}.h2{font:700 18px "DejaVu Sans",sans-serif;fill:#102a43}.h3{font:700 14px "DejaVu Sans",sans-serif;fill:#102a43}.footer{font:600 10px "DejaVu Sans",sans-serif;fill:#60788a}.step{font:700 11px "DejaVu Sans",sans-serif;fill:#fff;text-anchor:middle;dominant-baseline:middle}
+    </style>
+  </defs>
+  <rect width="794" height="1123" fill="#f3f7fa"/>
+  <rect width="794" height="84" fill="#0d2539"/>
+  <circle cx="45" cy="42" r="18" fill="#14b8a6"/><text x="45" y="47" text-anchor="middle" font-family="DejaVu Sans" font-size="21" font-weight="700" fill="#fff">L</text>
+  <text x="76" y="38" font-family="DejaVu Sans" font-size="14" font-weight="700" fill="#fff">LUMEN</text>
+  <text x="76" y="58" font-family="DejaVu Sans" font-size="11" fill="#b9d9d6">Humanitarian Attention-Gap Intelligence</text>
+  <text x="749" y="50" text-anchor="end" font-family="DejaVu Sans" font-size="11" font-weight="700" fill="#cfe8e5">THE INTERVENTION</text>
+
+  <text x="42" y="132" class="label">EVIDENCE TO ACTION</text>
+  <text x="42" y="166" class="h1">How Lumen works</text>
+  <text x="42" y="196" class="body">A daily automated pipeline connects public evidence, transparent scoring and direct outreach.</text>
+
+  <g filter="url(#shadow)">
+    <rect x="42" y="229" width="222" height="124" rx="12" fill="#fff"/>
+    <rect x="286" y="229" width="222" height="124" rx="12" fill="#fff"/>
+    <rect x="530" y="229" width="222" height="124" rx="12" fill="#fff"/>
+    <rect x="42" y="374" width="222" height="124" rx="12" fill="#fff"/>
+    <rect x="286" y="374" width="222" height="124" rx="12" fill="#fff"/>
+    <rect x="530" y="374" width="222" height="124" rx="12" fill="#fff"/>
+  </g>
+  <circle cx="68" cy="258" r="13" fill="#0f766e"/><text x="68" y="259" class="step">1</text>
+  <text x="91" y="263" class="h3">COLLECT</text>
+  <text x="62" y="295" class="body"><tspan x="62">n8n triggers source-specific</tspan><tspan x="62" dy="20">ingestion once per day.</tspan></text>
+  <circle cx="312" cy="258" r="13" fill="#0f766e"/><text x="312" y="259" class="step">2</text>
+  <text x="335" y="263" class="h3">STORE</text>
+  <text x="306" y="295" class="body"><tspan x="306">PostgreSQL preserves raw</tspan><tspan x="306" dy="20">readings before calculation.</tspan></text>
+  <circle cx="556" cy="258" r="13" fill="#0f766e"/><text x="556" y="259" class="step">3</text>
+  <text x="579" y="263" class="h3">SCORE</text>
+  <text x="550" y="295" class="body"><tspan x="550">A tested engine normalizes</tspan><tspan x="550" dy="20">available cohort signals.</tspan></text>
+  <circle cx="68" cy="403" r="13" fill="#1687b8"/><text x="68" y="404" class="step">4</text>
+  <text x="91" y="408" class="h3">RANK</text>
+  <text x="62" y="440" class="body"><tspan x="62">Need versus coverage,</tspan><tspan x="62" dy="20">adjusted for underfunding.</tspan></text>
+  <circle cx="312" cy="403" r="13" fill="#1687b8"/><text x="312" y="404" class="step">5</text>
+  <text x="335" y="408" class="h3">EXPLAIN</text>
+  <text x="306" y="440" class="body"><tspan x="306">Dashboard shows trends,</tspan><tspan x="306" dy="20">evidence and grounded briefs.</tspan></text>
+  <circle cx="556" cy="403" r="13" fill="#1687b8"/><text x="556" y="404" class="step">6</text>
+  <text x="579" y="408" class="h3">ACT</text>
+  <text x="550" y="440" class="body"><tspan x="550">Priority briefs reach users</tspan><tspan x="550" dy="20">through Telegram and email.</tspan></text>
+
+  <text x="42" y="548" class="label">SCORING METHOD</text>
+  <rect x="42" y="568" width="710" height="192" rx="12" fill="#fff" filter="url(#shadow)"/>
+  <text x="65" y="602" class="h2">Transparent, cohort-relative prioritization</text>
+  <circle cx="68" cy="633" r="4.5" fill="#14b8a6"/><text x="81" y="638" class="body">Log-transform inputs so very large displacement values do not flatten the cohort.</text>
+  <circle cx="68" cy="668" r="4.5" fill="#14b8a6"/><text x="81" y="673" class="body">Normalize available signals to 0–1 across crises scored in the same run.</text>
+  <circle cx="68" cy="703" r="4.5" fill="#14b8a6"/><text x="81" y="708" class="body">Estimate need from displacement, appeal size and active-disaster count.</text>
+  <circle cx="68" cy="738" r="4.5" fill="#14b8a6"/><text x="81" y="743" class="body">Compare need with media coverage, then amplify and add the funding-gap signal.</text>
+
+  <rect x="42" y="784" width="345" height="204" rx="12" fill="#e7f5f3" stroke="#a7dcd6"/>
+  <text x="64" y="818" class="label">DATA SOURCES</text>
+  <text x="64" y="853" class="strong">UNHCR</text><text x="139" y="853" class="body">Displaced people</text>
+  <text x="64" y="883" class="strong">OCHA FTS</text><text x="151" y="883" class="body">Appeals and funding gap</text>
+  <text x="64" y="913" class="strong">GDELT</text><text x="126" y="913" class="body">Media coverage volume</text>
+  <text x="64" y="943" class="strong">ReliefWeb</text><text x="149" y="943" class="body">Active disaster count</text>
+  <text x="64" y="971" class="small">ReliefWeb activates after appname approval.</text>
+
+  <rect x="407" y="784" width="345" height="204" rx="12" fill="#edf3fb" stroke="#b9cee7"/>
+  <text x="429" y="818" class="label">GROUNDING SAFEGUARDS</text>
+  <circle cx="433" cy="852" r="4.5" fill="#1687b8"/><text x="446" y="857" class="body">Scores store algorithm version and inputs.</text>
+  <circle cx="433" cy="887" r="4.5" fill="#1687b8"/><text x="446" y="892" class="body">Every brief references its exact score row.</text>
+  <circle cx="433" cy="922" r="4.5" fill="#1687b8"/><text x="446" y="927" class="body">Numeric facts are rendered deterministically.</text>
+  <circle cx="433" cy="957" r="4.5" fill="#1687b8"/><text x="446" y="962" class="body">Groq failure triggers a grounded fallback.</text>
+
+  <rect x="42" y="1010" width="710" height="48" rx="9" fill="#0d2539"/>
+  <text x="397" y="1040" text-anchor="middle" font-family="DejaVu Sans" font-size="13" font-weight="700" fill="#d7eeeb">No source failure or AI outage is allowed to erase the evidence trail.</text>
+
+  <text x="42" y="1091" class="footer">LUMEN · CONCEPT NOTE</text>
+  <text x="752" y="1091" text-anchor="end" class="footer">03 / 05</text>
+</svg>

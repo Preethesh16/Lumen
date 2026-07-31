@@ -149,13 +149,21 @@ export interface DeliverBriefResponse {
 export interface BriefRunResult {
   crisisId: string;
   iso3: Iso3;
+  name: string;
+  rank: number;
+  needScore: number;
+  coverageScore: number;
+  attentionGapScore: number;
+  fundingGapPct: number | null;
   brief: Brief;
   usedFallback: boolean;
-  delivery: DeliveryResult[];
 }
 
 export interface RunBriefsResponse {
+  scoredFor: IsoDate;
   data: BriefRunResult[];
+  /** One result per channel for the combined daily digest. */
+  delivery: DeliveryResult[];
 }
 
 // ---------------------------------------------------------------------------

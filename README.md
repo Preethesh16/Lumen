@@ -22,7 +22,7 @@ is not proportional to need. Lumen measures that gap and makes it rankable.
 | Ingestion (GDELT) | Parser tested; live fetch unverified (dev IP throttled) |
 | Ingestion (ReliefWeb) | **Blocked** — needs a registered `appname` (see below) |
 | Local + production containers | Working; separate development and production Compose files |
-| n8n workflow | Daily ingest → grounded brief → Telegram/email delivery; JSON-validated |
+| n8n workflow | Daily ingest → Top 5 grounded digest → Telegram/email delivery; JSON-validated |
 | Next.js dashboard (`apps/web`) | Complete; list, detail, trends, evidence, briefs, empty/error states |
 | Brief generation | Complete; optional Groq narrative with deterministic grounded fallback |
 | Telegram + email delivery | Complete and live-tested; Telegram also supports `/start`, `/help`, `/status` |
@@ -63,8 +63,10 @@ Open the dashboard at <http://localhost:3000>.
 n8n (for scheduled runs) is at http://localhost:5678 (basic auth, credentials
 from `.env`). Import `n8n/workflows/lumen-daily-ingest.json` via **Workflows →
 Import from File**, then activate it. The workflow calls `POST /ingest/run`,
-generates a brief for the highest-ranked crisis, and attempts configured
-delivery channels. All business logic lives in tested API modules, not in n8n.
+generates short summaries for the five highest-ranked crises, and sends one
+combined daily digest through the configured delivery channels. Every entry
+links to the dashboard for full evidence and history. All business logic lives
+in tested API modules, not in n8n.
 For n8n to reach the API on Linux, run the API on the host and keep
 `LUMEN_API_BASE_URL=http://host.docker.internal:4000`.
 
@@ -102,6 +104,7 @@ gitignored, and CI fails the build if it is ever tracked.
 | `GROQ_API_KEY` / `GROQ_MODEL` | brief generation | Optional. Without a key the grounded template is used |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` | delivery | Optional until Telegram delivery is enabled |
 | `RESEND_API_KEY` / `RESEND_FROM_EMAIL` / `DELIVERY_EMAIL_TO` | delivery | Optional until email delivery is enabled |
+| `DASHBOARD_BASE_URL` | API delivery | Public web URL used for full-detail links in the daily digest |
 | `API_BASE_URL` | web server | Internal URL of the Express API |
 | `LUMEN_ADMIN_SECRET` | web server | Optional override; otherwise `N8N_WEBHOOK_SECRET` is used. Never exposed to the browser |
 
@@ -156,9 +159,10 @@ lumen/
 ## How it works
 
 One n8n workflow runs nightly at 02:00 UTC. It asks the API to fetch all
-sources, persist observations, score the complete cohort once, generate a
-grounded brief for the highest-ranked crisis, and attempt Telegram/email
-delivery.
+sources, persist observations, score the complete cohort once, generate short
+grounded summaries for the five highest-ranked crises, and send one combined
+Telegram/email digest. The dashboard remains the source for full details,
+evidence, trends, and saved briefs.
 
 The API stores every raw reading in `source_observations` before computing
 anything. Scores are derived from stored observations, never directly from an
@@ -188,7 +192,8 @@ External account actions that cannot be committed in source control:
 2. Put the fresh key only in `.env` locally and in the hosting provider's secret store.
 3. Create a Telegram bot/chat and Resend sender if those channels are required.
 4. Register the ReliefWeb appname when approval arrives; the other sources work without it.
-5. Import and activate the n8n workflow once, then configure the production domain/deploy hook.
+5. Set `DASHBOARD_BASE_URL` to the public dashboard URL.
+6. Import and activate the n8n workflow once, then configure the production domain/deploy hook.
 
 ## License
 
